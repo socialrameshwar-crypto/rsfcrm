@@ -32,6 +32,7 @@ function ProposalDetail() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(100);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
