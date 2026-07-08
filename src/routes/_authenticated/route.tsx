@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell,
+  LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell, ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,13 @@ export const Route = createFileRoute("/_authenticated")({
   component: AppShell,
 });
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: any; highlight?: boolean };
+const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/proposals", label: "Proposals", icon: FileText },
   { to: "/proposals/new", label: "New Proposal", icon: PlusCircle, highlight: true },
+  { to: "/settings/terms", label: "Terms Library", icon: ScrollText },
 ];
 
 function AppShell() {

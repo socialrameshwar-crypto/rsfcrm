@@ -27,6 +27,14 @@ function ProposalDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [notesDraft, setNotesDraft] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["proposal", id],
@@ -38,6 +46,22 @@ function ProposalDetail() {
         .single();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const termsTemplateId = (data as any)?.terms_template_id as string | null | undefined;
+  const { data: termsClauses = [] } = useQuery({
+    queryKey: ["proposal-terms", termsTemplateId],
+    enabled: !!termsTemplateId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("terms_clauses")
+        .select("title, body, position, enabled")
+        .eq("template_id", termsTemplateId as string)
+        .eq("enabled", true)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map(c => ({ title: c.title, body: c.body }));
     },
   });
 
@@ -90,13 +114,11 @@ function ProposalDetail() {
     commercials,
     ai,
     template: p.template,
+    quotation_type: (((p as any).quotation_type as "domestic" | "export") ?? "domestic"),
+    terms: termsClauses,
   };
 
   const downloadPdf = () => { generateProposalPdf(pdfInput); };
-
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
 
   const openPreview = async () => {
     setPreviewOpen(true);
@@ -112,11 +134,6 @@ function ProposalDetail() {
       setPreviewLoading(false);
     }
   };
-
-  useEffect(() => {
-    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

@@ -83,9 +83,11 @@ export type Database = {
           material: string
           product_type: string
           proposal_number: string
+          quotation_type: string
           sales_engineer: string | null
           status: string
           template: string
+          terms_template_id: string | null
           title: string
           total_value: number
           updated_at: string
@@ -106,9 +108,11 @@ export type Database = {
           material: string
           product_type: string
           proposal_number: string
+          quotation_type?: string
           sales_engineer?: string | null
           status?: string
           template?: string
+          terms_template_id?: string | null
           title: string
           total_value?: number
           updated_at?: string
@@ -129,9 +133,11 @@ export type Database = {
           material?: string
           product_type?: string
           proposal_number?: string
+          quotation_type?: string
           sales_engineer?: string | null
           status?: string
           template?: string
+          terms_template_id?: string | null
           title?: string
           total_value?: number
           updated_at?: string
@@ -147,6 +153,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      terms_clauses: {
+        Row: {
+          body: string
+          created_at: string
+          enabled: boolean
+          id: string
+          position: number
+          template_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          position?: number
+          template_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          position?: number
+          template_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_clauses_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "terms_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      terms_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          scope: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          scope?: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          scope?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
+import { Route as AuthenticatedSettingsTermsRouteImport } from './routes/_authenticated/settings.terms'
 import { Route as AuthenticatedProposalsNewRouteImport } from './routes/_authenticated/proposals.new'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 
@@ -48,6 +49,12 @@ const AuthenticatedProposalsIndexRoute =
     path: '/proposals/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsTermsRoute =
+  AuthenticatedSettingsTermsRouteImport.update({
+    id: '/settings/terms',
+    path: '/settings/terms',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProposalsNewRoute =
   AuthenticatedProposalsNewRouteImport.update({
     id: '/proposals/new',
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/proposals/new': typeof AuthenticatedProposalsNewRoute
+  '/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +85,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/proposals/new': typeof AuthenticatedProposalsNewRoute
+  '/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
 }
 export interface FileRoutesById {
@@ -88,6 +97,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/proposals/new': typeof AuthenticatedProposalsNewRoute
+  '/_authenticated/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
 }
 export interface FileRouteTypes {
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/proposals/$id'
     | '/proposals/new'
+    | '/settings/terms'
     | '/proposals/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/proposals/$id'
     | '/proposals/new'
+    | '/settings/terms'
     | '/proposals'
   id:
     | '__root__'
@@ -118,6 +130,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/proposals/new'
+    | '/_authenticated/settings/terms'
     | '/_authenticated/proposals/'
   fileRoutesById: FileRoutesById
 }
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/terms': {
+      id: '/_authenticated/settings/terms'
+      path: '/settings/terms'
+      fullPath: '/settings/terms'
+      preLoaderRoute: typeof AuthenticatedSettingsTermsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/proposals/new': {
       id: '/_authenticated/proposals/new'
       path: '/proposals/new'
@@ -193,6 +213,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRoute
   AuthenticatedProposalsNewRoute: typeof AuthenticatedProposalsNewRoute
+  AuthenticatedSettingsTermsRoute: typeof AuthenticatedSettingsTermsRoute
   AuthenticatedProposalsIndexRoute: typeof AuthenticatedProposalsIndexRoute
 }
 
@@ -201,6 +222,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProposalsIdRoute: AuthenticatedProposalsIdRoute,
   AuthenticatedProposalsNewRoute: AuthenticatedProposalsNewRoute,
+  AuthenticatedSettingsTermsRoute: AuthenticatedSettingsTermsRoute,
   AuthenticatedProposalsIndexRoute: AuthenticatedProposalsIndexRoute,
 }
 
