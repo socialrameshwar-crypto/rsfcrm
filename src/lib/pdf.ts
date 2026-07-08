@@ -321,6 +321,7 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   cursor = (doc as any).lastAutoTable.finalY;
 
   const c = p.commercials;
+  const isExport = p.quotation_type === "export";
   autoTable(doc, {
     startY: cursor,
     body: [
@@ -328,13 +329,18 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
         { content: "Sub-Total", styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } },
         { content: pdfMoney(c.machines_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } },
       ],
+      isExport
+        ? [
+            { content: "Export packing & documentation (included)", styles: { halign: "right" } },
+            { content: pdfMoney(0, p.currency), styles: { halign: "right" } },
+          ]
+        : [
+            { content: `GST @ ${c.tax_rate}%  (HSN Code: 84798910)`, styles: { halign: "right" } },
+            { content: pdfMoney(c.tax, p.currency), styles: { halign: "right" } },
+          ],
       [
-        { content: `GST @ ${c.tax_rate}%  (HSN Code: 84798910)`, styles: { halign: "right" } },
-        { content: pdfMoney(c.tax, p.currency), styles: { halign: "right" } },
-      ],
-      [
-        { content: spaced("NET TOTAL", " "), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
-        { content: pdfMoney(c.grand_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
+        { content: spaced(isExport ? "TOTAL (FOB)" : "NET TOTAL", " "), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
+        { content: pdfMoney(isExport ? c.machines_total : c.grand_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
       ],
     ],
     theme: "grid",
