@@ -146,10 +146,17 @@ function ProposalDetail() {
   };
 
   const saveMachines = (next: Machine[]) => {
-    const subtotal = next.reduce((s, m) => s + (Number(m.unit_price) || 0) * (Number(m.qty) || 0), 0);
-    const gst = commercials.gst_percent ? subtotal * (Number(commercials.gst_percent) / 100) : 0;
-    const total = subtotal + gst + (Number(commercials.freight) || 0) + (Number(commercials.installation) || 0) - (Number(commercials.discount) || 0);
-    patch.mutate({ machines: next as any, total_value: Math.max(0, total) }, { onSuccess: () => toast.success("Machines updated") });
+    const machines_total = next.reduce((s, m) => s + (Number(m.unit_price) || 0) * (Number(m.qty) || 0), 0);
+    const freight = Number(commercials.freight) || 0;
+    const packing = Number(commercials.packing) || 0;
+    const installation = Number(commercials.installation) || 0;
+    const commissioning = Number(commercials.commissioning) || 0;
+    const taxRate = Number(commercials.tax_rate) || 0;
+    const subtotal = machines_total + freight + packing + installation + commissioning;
+    const tax = Math.round((subtotal * taxRate) / 100);
+    const grand_total = subtotal + tax;
+    const nextCommercials = { ...commercials, machines_total, tax, grand_total };
+    patch.mutate({ machines: next as any, commercials: nextCommercials as any, total_value: grand_total }, { onSuccess: () => toast.success("Machines updated") });
   };
 
   return (
