@@ -54,7 +54,7 @@ async function loadLogo(): Promise<string | null> {
 
 const spaced = (s: string, gap = " ") => s.split("").join(gap);
 
-export async function generateProposalPdf(p: ProposalPdfInput) {
+export async function buildProposalPdf(p: ProposalPdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
