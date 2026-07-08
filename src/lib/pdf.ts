@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { AiProposalContent } from "./ai.functions";
 import type { Machine, Utilities, Commercials } from "./proposal-catalog";
-import { formatMoney } from "./format";
+import logoAsset from "@/assets/rsf-logo.png.asset.json";
 
 export interface ProposalPdfInput {
   proposal_number: string;
@@ -29,7 +29,7 @@ export interface ProposalPdfInput {
   template: string;
 }
 
-// Rameshwar Steel Fab brand palette (matches printed brochure reference)
+// Rameshwar Steel Fab brand palette (matches printed brochure)
 const BRAND_RED: [number, number, number] = [200, 16, 46]; // #C8102E
 const BRAND_DARK: [number, number, number] = [17, 17, 17];
 const SOFT_GREY: [number, number, number] = [245, 246, 248];
@@ -37,52 +37,100 @@ const BORDER_GREY: [number, number, number] = [220, 222, 226];
 const TEXT_GREY: [number, number, number] = [95, 99, 108];
 const PINK_TINT: [number, number, number] = [253, 240, 242];
 
-async function loadLogo(): Promise<string | null> {
-  try {
-    const res = await fetch("/rsf-logo.png");
-    const blob = await res.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(fr.result as string);
-      fr.onerror = () => reject(fr.error);
-      fr.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
+const HEADER_BOTTOM = 108;   // Y where content may start
+const FOOTER_TOP = 34;       // reserved from bottom for footer
+const CONTENT_TOP = 128;     // first content baseline
+const MARGIN = 40;
+
+// -------- Logo loader (singleton, aspect-preserving) --------
+type LogoInfo = { dataUrl: string; ratio: number };
+let cachedLogo: Promise<LogoInfo | null> | null = null;
+
+function loadLogo(): Promise<LogoInfo | null> {
+  if (cachedLogo) return cachedLogo;
+  cachedLogo = (async () => {
+    try {
+      const res = await fetch(logoAsset.url);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = () => reject(fr.error);
+        fr.readAsDataURL(blob);
+      });
+      const ratio = await new Promise<number>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img.naturalWidth / img.naturalHeight || 3);
+        img.onerror = () => resolve(3);
+        img.src = dataUrl;
+      });
+      return { dataUrl, ratio };
+    } catch {
+      return null;
+    }
+  })();
+  return cachedLogo;
 }
 
 const spaced = (s: string, gap = " ") => s.split("").join(gap);
+
+// Built-in helvetica does not include ₹ (or €£¥ reliably). Substitute a safe
+// prefix for the PDF while still respecting locale grouping.
+function pdfMoney(amount: number, currency: string): string {
+  const value = Math.round(amount || 0);
+  const grouped = new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+    maximumFractionDigits: 0,
+  }).format(value);
+  return `${currencyPrefix(currency)} ${grouped}`;
+}
+function currencyPrefix(currency: string): string {
+  switch (currency) {
+    case "INR": return "Rs.";
+    case "USD": return "USD";
+    case "EUR": return "EUR";
+    case "GBP": return "GBP";
+    case "AED": return "AED";
+    default: return currency;
+  }
+}
+
+// Truncate a string to fit within `maxWidth` pt at the current font settings,
+// appending an ellipsis when needed. Used for single-line labels.
+function fitLine(doc: jsPDF, text: string, maxWidth: number): string {
+  if (!text) return "";
+  if (doc.getTextWidth(text) <= maxWidth) return text;
+  let s = text;
+  while (s.length > 1 && doc.getTextWidth(s + "…") > maxWidth) s = s.slice(0, -1);
+  return s + "…";
+}
 
 export async function buildProposalPdf(p: ProposalPdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const MARGIN = 40;
 
-  const logoDataUrl = await loadLogo();
+  const logo = await loadLogo();
 
   const drawHeader = () => {
-    // Logo
-    if (logoDataUrl) {
-      try { doc.addImage(logoDataUrl, "PNG", MARGIN, 24, 150, 55); } catch { /* noop */ }
-    } else {
-      doc.setTextColor(...BRAND_RED);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text("RAMESHWAR", MARGIN, 48);
-      doc.setFontSize(10);
-      doc.setTextColor(...BRAND_RED);
-      doc.text("S T E E L   F A B", MARGIN, 64);
+    // Logo (aspect-preserved). Bound height at 46pt so it never crowds the header.
+    if (logo) {
+      try {
+        const h = 54;
+        const w = h * logo.ratio;
+        doc.addImage(logo.dataUrl, "PNG", MARGIN, 24, w, h, undefined, "FAST");
+      } catch {
+        /* fall through to text logo */
+      }
     }
-    // Right block
+    // Right block — address + contact
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
     doc.setTextColor(...BRAND_RED);
     doc.text("Your Success  •  Our Commitment  •  More than Suppliers — Partners", W - MARGIN, 34, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60);
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.text("31, Sayona Industrial Estate, Near Panchratna Estate, Ramol Cross Road,", W - MARGIN, 48, { align: "right" });
     doc.text("Phase IV, Vatva GIDC, Ahmedabad (Gujarat) – 382445", W - MARGIN, 60, { align: "right" });
     doc.text("+91 97256 05639   |   Sales@rameshwar.co.in   |   www.rameshwar.co.in", W - MARGIN, 72, { align: "right" });
@@ -92,54 +140,57 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
     // Divider
     doc.setDrawColor(...BORDER_GREY);
     doc.setLineWidth(0.5);
-    doc.line(MARGIN, 100, W - MARGIN, 100);
+    doc.line(MARGIN, HEADER_BOTTOM - 4, W - MARGIN, HEADER_BOTTOM - 4);
   };
 
-  const drawFooter = () => {
+  const drawFooter = (pageNum: number, totalPages: number) => {
     doc.setFillColor(...BRAND_RED);
-    doc.rect(0, H - 28, W, 28, "F");
+    doc.rect(0, H - FOOTER_TOP, W, FOOTER_TOP, "F");
     doc.setTextColor(255);
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.text(
       `"Nation First … Always First …"   |   www.rameshwar.co.in   |   GSTIN: 24ABEPL9780J1ZL`,
       W / 2,
-      H - 10,
-      { align: "center" }
+      H - 13,
+      { align: "center" },
     );
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(`Page ${pageNum} of ${totalPages}`, W - MARGIN, H - 13, { align: "right" });
   };
+
+  // Header on every page; footer is finalised at the end so page counts are correct.
+  const paintChrome = () => { drawHeader(); };
 
   const newPage = () => {
     doc.addPage();
-    drawHeader();
-    drawFooter();
+    paintChrome();
   };
 
   const ensureSpace = (needed: number, cursor: number): number => {
-    if (cursor + needed > H - 60) {
+    if (cursor + needed > H - FOOTER_TOP - 12) {
       newPage();
-      return 130;
+      return CONTENT_TOP;
     }
     return cursor;
   };
 
   // ============ PAGE 1 ============
-  drawHeader();
-  drawFooter();
-
+  paintChrome();
   let cursor = 120;
 
   // QUOTATION banner
   doc.setFillColor(...BRAND_RED);
-  doc.rect(MARGIN, cursor, W - MARGIN * 2, 42, "F");
+  doc.rect(MARGIN, cursor, W - MARGIN * 2, 40, "F");
   doc.setTextColor(255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text(spaced("QUOTATION", "  "), W / 2, cursor + 27, { align: "center" });
-  cursor += 60;
+  doc.setFontSize(17);
+  doc.text(spaced("QUOTATION", "  "), W / 2, cursor + 26, { align: "center" });
+  cursor += 56;
 
   // Info strip: Quote No / Date / Valid Until
-  const infoH = 50;
+  const infoH = 48;
   doc.setFillColor(...SOFT_GREY);
   doc.rect(MARGIN, cursor, W - MARGIN * 2, infoH, "F");
   doc.setFillColor(...BRAND_RED);
@@ -153,38 +204,42 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   infoItems.forEach(([label, value, red], i) => {
     const x = MARGIN + 20 + i * colW;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(...TEXT_GREY);
-    doc.text(label, x, cursor + 20);
+    doc.text(label, x, cursor + 18);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(...(red ? BRAND_RED : BRAND_DARK));
-    doc.text(value, x, cursor + 38);
+    doc.text(fitLine(doc, value, colW - 24), x, cursor + 36);
   });
-  cursor += infoH + 20;
+  cursor += infoH + 18;
 
   // Bill To / Subject two-column
-  const boxH = 110;
+  const boxH = 115;
   const halfW = (W - MARGIN * 2 - 16) / 2;
-  // Bill To
+  // Bill To box
   doc.setFillColor(...BRAND_RED);
   doc.rect(MARGIN, cursor, 4, boxH, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(...BRAND_DARK);
-  doc.text(spaced("BILL TO", " "), MARGIN + 16, cursor + 18);
-  doc.setFontSize(12);
-  doc.text((p.customer.contact_person || "Valued Customer").toUpperCase(), MARGIN + 16, cursor + 38);
+  doc.text(spaced("BILL TO", " "), MARGIN + 16, cursor + 16);
+  doc.setFontSize(11.5);
+  doc.text(
+    fitLine(doc, (p.customer.contact_person || "Valued Customer").toUpperCase(), halfW - 20),
+    MARGIN + 16,
+    cursor + 34,
+  );
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(50);
-  doc.text(p.customer.company_name || "-", MARGIN + 16, cursor + 54);
+  doc.text(fitLine(doc, p.customer.company_name || "-", halfW - 20), MARGIN + 16, cursor + 50);
   doc.setFontSize(9);
-  let by = cursor + 70;
-  if (p.customer.mobile) { drawLabelValue(doc, "Mobile :-", p.customer.mobile, MARGIN + 16, by); by += 12; }
-  if (p.customer.email) { drawLabelValue(doc, "Email :-", p.customer.email, MARGIN + 16, by); by += 12; }
+  let by = cursor + 66;
+  if (p.customer.mobile) { by = drawLabelValue(doc, "Mobile :-", p.customer.mobile, MARGIN + 16, by, halfW - 20); }
+  if (p.customer.email) { by = drawLabelValue(doc, "Email :-", p.customer.email, MARGIN + 16, by, halfW - 20); }
   const addr = p.customer.address || [p.customer.city, p.customer.country].filter(Boolean).join(", ");
-  if (addr) drawLabelValue(doc, "Address :-", addr, MARGIN + 16, by);
+  if (addr) drawLabelValue(doc, "Address :-", addr, MARGIN + 16, by, halfW - 20);
 
   // Subject box (right, pink tint)
   const subX = MARGIN + halfW + 16;
@@ -193,38 +248,45 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   doc.setFillColor(...BRAND_RED);
   doc.rect(subX, cursor, 4, boxH, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(...BRAND_DARK);
-  doc.text(spaced("SUBJECT", " "), subX + 16, cursor + 18);
+  doc.text(spaced("SUBJECT", " "), subX + 16, cursor + 16);
   doc.setTextColor(...BRAND_RED);
   doc.setFontSize(11);
   const subj = `Offer for ${p.product_label}`;
-  const subjLines = doc.splitTextToSize(subj, halfW - 24);
-  doc.text(subjLines, subX + 16, cursor + 38);
+  const subjLines = doc.splitTextToSize(subj, halfW - 24) as string[];
+  doc.text(subjLines, subX + 16, cursor + 34);
+  const subjBottom = cursor + 34 + subjLines.length * 13;
   doc.setTextColor(...BRAND_DARK);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(`Capacity: ${p.capacity}`, subX + 16, cursor + 38 + subjLines.length * 14 + 6);
-  doc.text(`Automation: ${p.automation}  |  MOC: ${p.material}`, subX + 16, cursor + 38 + subjLines.length * 14 + 22);
-  cursor += boxH + 24;
+  doc.setFontSize(9.5);
+  doc.text(fitLine(doc, `Capacity: ${p.capacity}`, halfW - 24), subX + 16, subjBottom + 8);
+  doc.text(
+    fitLine(doc, `Automation: ${p.automation}  |  MOC: ${p.material}`, halfW - 24),
+    subX + 16,
+    subjBottom + 22,
+  );
+  cursor += boxH + 22;
 
   // Greeting + intro
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(10);
   doc.setTextColor(...BRAND_DARK);
   doc.text("Dear Sir,", MARGIN, cursor);
-  cursor += 16;
-  const intro = p.ai.executive_summary
-    || `Thank you for your valuable enquiry for the ${p.product_label}. We are pleased to submit our competitive quotation and look forward to a long-term business relationship.`;
-  const introLines = doc.splitTextToSize(intro, W - MARGIN * 2);
-  doc.text(introLines, MARGIN, cursor);
-  cursor += introLines.length * 13 + 14;
+  cursor += 14;
+  const intro =
+    p.ai.executive_summary ||
+    `Thank you for your valuable enquiry for the ${p.product_label}. We are pleased to submit our competitive quotation and look forward to a long-term business relationship.`;
+  const introLines = doc.splitTextToSize(intro, W - MARGIN * 2) as string[];
+  // clip intro to at most 5 lines on page 1 to reserve room for the price table
+  const shownIntro = introLines.slice(0, 5);
+  doc.text(shownIntro, MARGIN, cursor);
+  cursor += shownIntro.length * 12 + 12;
 
   // Product table
-  const symbol = currencySymbol(p.currency);
   autoTable(doc, {
     startY: cursor,
-    head: [["SR.", "CAT.", "PRODUCT DESCRIPTION", "QTY.", `AMOUNT (${symbol})`]],
+    head: [["SR.", "CAT.", "PRODUCT DESCRIPTION", "QTY.", `AMOUNT (${currencyPrefix(p.currency)})`]],
     body: p.machines.map((m, i) => [
       { content: String(i + 1), styles: { textColor: BRAND_RED, fontStyle: "bold", halign: "center" } },
       { content: String.fromCharCode(65 + i), styles: { textColor: BRAND_RED, fontStyle: "bold", halign: "center" } },
@@ -236,18 +298,20 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
         styles: { fontStyle: "normal" },
       },
       { content: `${m.qty} NOS.`, styles: { halign: "center" } },
-      { content: formatMoney(m.unit_price * m.qty, p.currency), styles: { halign: "right", fontStyle: "bold" } },
+      { content: pdfMoney(m.unit_price * m.qty, p.currency), styles: { halign: "right", fontStyle: "bold" } },
     ]),
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 7, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    styles: { fontSize: 9, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, overflow: "linebreak" },
     headStyles: { fillColor: BRAND_DARK, textColor: 255, fontSize: 9.5, fontStyle: "bold", halign: "center" },
     columnStyles: {
-      0: { cellWidth: 40, halign: "center" },
-      1: { cellWidth: 40, halign: "center" },
-      3: { cellWidth: 60, halign: "center" },
-      4: { cellWidth: 100, halign: "right" },
+      0: { cellWidth: 36, halign: "center" },
+      1: { cellWidth: 36, halign: "center" },
+      3: { cellWidth: 56, halign: "center" },
+      4: { cellWidth: 110, halign: "right" },
     },
-    margin: { left: MARGIN, right: MARGIN },
+    margin: { left: MARGIN, right: MARGIN, top: HEADER_BOTTOM, bottom: FOOTER_TOP + 8 },
+    rowPageBreak: "avoid",
+    didDrawPage: paintChrome,
   });
   cursor = (doc as any).lastAutoTable.finalY;
 
@@ -255,28 +319,36 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   autoTable(doc, {
     startY: cursor,
     body: [
-      [{ content: "Sub-Total", styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } },
-       { content: formatMoney(c.machines_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } }],
-      [{ content: `GST @ ${c.tax_rate}%  (HSN Code: 84798910)`, styles: { halign: "right" } },
-       { content: formatMoney(c.tax, p.currency), styles: { halign: "right" } }],
-      [{ content: spaced("NET TOTAL", " "), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
-       { content: formatMoney(c.grand_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } }],
+      [
+        { content: "Sub-Total", styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } },
+        { content: pdfMoney(c.machines_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } },
+      ],
+      [
+        { content: `GST @ ${c.tax_rate}%  (HSN Code: 84798910)`, styles: { halign: "right" } },
+        { content: pdfMoney(c.tax, p.currency), styles: { halign: "right" } },
+      ],
+      [
+        { content: spaced("NET TOTAL", " "), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
+        { content: pdfMoney(c.grand_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
+      ],
     ],
     theme: "grid",
-    styles: { fontSize: 10, cellPadding: 8, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    styles: { fontSize: 10, cellPadding: 7, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
     columnStyles: {
-      0: { cellWidth: W - MARGIN * 2 - 140 },
-      1: { cellWidth: 140, halign: "right" },
+      0: { cellWidth: W - MARGIN * 2 - 150 },
+      1: { cellWidth: 150, halign: "right" },
     },
-    margin: { left: MARGIN, right: MARGIN },
+    margin: { left: MARGIN, right: MARGIN, top: HEADER_BOTTOM, bottom: FOOTER_TOP + 8 },
+    rowPageBreak: "avoid",
+    didDrawPage: paintChrome,
   });
-  cursor = (doc as any).lastAutoTable.finalY + 20;
+  cursor = (doc as any).lastAutoTable.finalY + 18;
 
   // ============ PAGE 2: Terms + Bank ============
   newPage();
-  cursor = 130;
+  cursor = CONTENT_TOP;
   sectionHeader(doc, "TERMS & CONDITIONS", cursor);
-  cursor += 26;
+  cursor += 24;
   autoTable(doc, {
     startY: cursor,
     body: [
@@ -288,28 +360,33 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
       ["Validity", `Offer valid until ${validUntil(p.date)}`],
     ],
     theme: "grid",
-    styles: { fontSize: 10, cellPadding: 8, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, valign: "middle" },
+    styles: { fontSize: 10, cellPadding: 7, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, valign: "middle", overflow: "linebreak" },
     columnStyles: {
       0: { cellWidth: 110, fontStyle: "bold", fillColor: SOFT_GREY },
       1: { cellWidth: W - MARGIN * 2 - 110 },
     },
-    margin: { left: MARGIN, right: MARGIN },
+    margin: { left: MARGIN, right: MARGIN, top: HEADER_BOTTOM, bottom: FOOTER_TOP + 8 },
+    rowPageBreak: "avoid",
+    didDrawPage: paintChrome,
   });
-  cursor = (doc as any).lastAutoTable.finalY + 20;
+  cursor = (doc as any).lastAutoTable.finalY + 18;
 
+  cursor = ensureSpace(60, cursor);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...BRAND_DARK);
-  const closing = "We trust the above offer meets your requirements. Kindly confirm your order at the earliest to ensure timely delivery. We assure you of our best quality and services at all times.";
-  const cLines = doc.splitTextToSize(closing, W - MARGIN * 2);
+  const closing =
+    "We trust the above offer meets your requirements. Kindly confirm your order at the earliest to ensure timely delivery. We assure you of our best quality and services at all times.";
+  const cLines = doc.splitTextToSize(closing, W - MARGIN * 2) as string[];
   doc.text(cLines, MARGIN, cursor);
-  cursor += cLines.length * 13 + 20;
+  cursor += cLines.length * 13 + 16;
 
   // Red divider
+  cursor = ensureSpace(110, cursor);
   doc.setDrawColor(...BRAND_RED);
   doc.setLineWidth(1);
   doc.line(MARGIN, cursor, W - MARGIN, cursor);
-  cursor += 20;
+  cursor += 18;
 
   // Signature + Bank
   const sigColW = (W - MARGIN * 2 - 20) / 2;
@@ -345,30 +422,28 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   doc.text("A/C No.:  XXXXXXXXXXXX", bx + 12, cursor + 56);
   doc.text("IFSC:  HDFC0XXXXXX", bx + 12, cursor + 72);
 
-  // ============ PAGE 3+: Technical proposal ============
+  // ============ Technical proposal pages ============
   newPage();
-  cursor = 130;
-  sectionHeader(doc, "COMPANY INTRODUCTION", cursor);
-  cursor += 22;
-  cursor = paragraph(doc, p.ai.company_introduction, MARGIN, cursor, W - MARGIN * 2, H);
+  cursor = CONTENT_TOP;
 
-  cursor = ensureSpace(60, cursor);
-  sectionHeader(doc, "PROJECT OVERVIEW", cursor);
-  cursor += 22;
-  cursor = paragraph(doc, p.ai.project_overview, MARGIN, cursor, W - MARGIN * 2, H);
-
-  cursor = ensureSpace(60, cursor);
-  sectionHeader(doc, "SCOPE OF SUPPLY", cursor);
-  cursor += 22;
-  cursor = paragraph(doc, p.ai.scope_of_supply, MARGIN, cursor, W - MARGIN * 2, H);
-
-  cursor = ensureSpace(60, cursor);
-  sectionHeader(doc, "MANUFACTURING PROCESS", cursor);
-  cursor += 22;
-  cursor = paragraph(doc, p.ai.manufacturing_process, MARGIN, cursor, W - MARGIN * 2, H);
+  const contentSections: Array<[string, string | string[] | undefined, "text" | "bullets"]> = [
+    ["COMPANY INTRODUCTION", p.ai.company_introduction, "text"],
+    ["PROJECT OVERVIEW", p.ai.project_overview, "text"],
+    ["SCOPE OF SUPPLY", p.ai.scope_of_supply, "text"],
+    ["MANUFACTURING PROCESS", p.ai.manufacturing_process, "text"],
+  ];
+  for (const [title, body, kind] of contentSections) {
+    if (!body || (Array.isArray(body) && !body.length)) continue;
+    cursor = ensureSpace(80, cursor);
+    sectionHeader(doc, title, cursor);
+    cursor += 22;
+    cursor = kind === "text"
+      ? paragraph(doc, body as string, MARGIN, cursor, W - MARGIN * 2, H, ensureSpace)
+      : bulletList(doc, body as string[], MARGIN, cursor, W - MARGIN * 2, H, ensureSpace);
+  }
 
   // Machine specs table
-  cursor = ensureSpace(160, cursor);
+  cursor = ensureSpace(140, cursor);
   sectionHeader(doc, "MACHINE SPECIFICATIONS", cursor);
   cursor += 22;
   autoTable(doc, {
@@ -376,9 +451,12 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
     head: [["#", "Machine", "Qty", "Capacity", "Motor", "MOC"]],
     body: p.machines.map((m, i) => [i + 1, m.name, m.qty, m.capacity, m.motor, m.material]),
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    styles: { fontSize: 9, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, overflow: "linebreak" },
     headStyles: { fillColor: BRAND_DARK, textColor: 255, fontStyle: "bold" },
-    margin: { left: MARGIN, right: MARGIN },
+    columnStyles: { 0: { cellWidth: 26, halign: "center" }, 2: { cellWidth: 40, halign: "center" } },
+    margin: { left: MARGIN, right: MARGIN, top: HEADER_BOTTOM, bottom: FOOTER_TOP + 8 },
+    rowPageBreak: "avoid",
+    didDrawPage: paintChrome,
   });
   cursor = (doc as any).lastAutoTable.finalY + 20;
 
@@ -391,67 +469,52 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
     startY: cursor,
     head: [["Parameter", "Value"]],
     body: [
-      ["Connected Load", `${u.connected_load_kw} kW`],
-      ["Running Load", `${u.running_load_kw} kW`],
-      ["Power Consumption", `${u.power_kwh_day} kWh / day`],
-      ["Water Requirement", `${u.water_kld} KL / day`],
-      ["Steam", `${u.steam_kg_hr} kg/hr`],
-      ["Compressed Air", `${u.air_cfm} CFM`],
-      ["Manpower", `${u.manpower} persons / shift`],
-      ["Floor Space", `${u.floor_space_sqm} sqm`],
-      ["Production / Shift", `${u.production_per_shift_kg} kg`],
-      ["Production / Day", `${u.production_per_day_kg} kg`],
+      ["Connected Load", `${u.connected_load_kw ?? "-"} kW`],
+      ["Running Load", `${u.running_load_kw ?? "-"} kW`],
+      ["Power Consumption", `${u.power_kwh_day ?? "-"} kWh / day`],
+      ["Water Requirement", `${u.water_kld ?? "-"} KL / day`],
+      ["Steam", `${u.steam_kg_hr ?? "-"} kg/hr`],
+      ["Compressed Air", `${u.air_cfm ?? "-"} CFM`],
+      ["Manpower", `${u.manpower ?? "-"} persons / shift`],
+      ["Floor Space", `${u.floor_space_sqm ?? "-"} sqm`],
+      ["Production / Shift", `${u.production_per_shift_kg ?? "-"} kg`],
+      ["Production / Day", `${u.production_per_day_kg ?? "-"} kg`],
     ],
     theme: "grid",
-    styles: { fontSize: 10, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    styles: { fontSize: 10, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, overflow: "linebreak" },
     headStyles: { fillColor: BRAND_RED, textColor: 255, fontStyle: "bold" },
     columnStyles: { 0: { fontStyle: "bold", fillColor: SOFT_GREY, cellWidth: 220 } },
-    margin: { left: MARGIN, right: MARGIN },
+    margin: { left: MARGIN, right: MARGIN, top: HEADER_BOTTOM, bottom: FOOTER_TOP + 8 },
+    rowPageBreak: "avoid",
+    didDrawPage: paintChrome,
   });
-  cursor = (doc as any).lastAutoTable.finalY + 24;
+  cursor = (doc as any).lastAutoTable.finalY + 22;
 
   // Feature blocks
-  if (p.ai.advantages?.length) {
+  const featureSections: Array<[string, string | string[] | undefined, "text" | "bullets"]> = [
+    ["KEY ADVANTAGES", p.ai.advantages, "bullets"],
+    ["SAFETY FEATURES", p.ai.safety_features, "bullets"],
+    ["QUALITY ASSURANCE", p.ai.quality_assurance, "text"],
+    ["INSTALLATION & COMMISSIONING", p.ai.installation, "text"],
+    ["WARRANTY", p.ai.warranty, "text"],
+    ["AFTER SALES SUPPORT", p.ai.after_sales, "text"],
+    ["WHY RAMESHWAR STEEL FAB", p.ai.value_proposition, "text"],
+  ];
+  for (const [title, body, kind] of featureSections) {
+    if (!body || (Array.isArray(body) && !body.length)) continue;
     cursor = ensureSpace(80, cursor);
-    sectionHeader(doc, "KEY ADVANTAGES", cursor);
+    sectionHeader(doc, title, cursor);
     cursor += 22;
-    cursor = bulletList(doc, p.ai.advantages, MARGIN, cursor, W - MARGIN * 2, H);
+    cursor = kind === "text"
+      ? paragraph(doc, body as string, MARGIN, cursor, W - MARGIN * 2, H, ensureSpace)
+      : bulletList(doc, body as string[], MARGIN, cursor, W - MARGIN * 2, H, ensureSpace);
   }
-  if (p.ai.safety_features?.length) {
-    cursor = ensureSpace(80, cursor);
-    sectionHeader(doc, "SAFETY FEATURES", cursor);
-    cursor += 22;
-    cursor = bulletList(doc, p.ai.safety_features, MARGIN, cursor, W - MARGIN * 2, H);
-  }
-  if (p.ai.quality_assurance) {
-    cursor = ensureSpace(80, cursor);
-    sectionHeader(doc, "QUALITY ASSURANCE", cursor);
-    cursor += 22;
-    cursor = paragraph(doc, p.ai.quality_assurance, MARGIN, cursor, W - MARGIN * 2, H);
-  }
-  if (p.ai.installation) {
-    cursor = ensureSpace(80, cursor);
-    sectionHeader(doc, "INSTALLATION & COMMISSIONING", cursor);
-    cursor += 22;
-    cursor = paragraph(doc, p.ai.installation, MARGIN, cursor, W - MARGIN * 2, H);
-  }
-  if (p.ai.warranty) {
-    cursor = ensureSpace(60, cursor);
-    sectionHeader(doc, "WARRANTY", cursor);
-    cursor += 22;
-    cursor = paragraph(doc, p.ai.warranty, MARGIN, cursor, W - MARGIN * 2, H);
-  }
-  if (p.ai.after_sales) {
-    cursor = ensureSpace(60, cursor);
-    sectionHeader(doc, "AFTER SALES SUPPORT", cursor);
-    cursor += 22;
-    cursor = paragraph(doc, p.ai.after_sales, MARGIN, cursor, W - MARGIN * 2, H);
-  }
-  if (p.ai.value_proposition) {
-    cursor = ensureSpace(60, cursor);
-    sectionHeader(doc, "WHY RAMESHWAR STEEL FAB", cursor);
-    cursor += 22;
-    cursor = paragraph(doc, p.ai.value_proposition, MARGIN, cursor, W - MARGIN * 2, H);
+
+  // Finalise footers with correct page counts
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    drawFooter(i, totalPages);
   }
 
   return { doc, filename: `${p.proposal_number.replace(/\//g, "_")}.pdf` };
@@ -468,61 +531,81 @@ export async function getProposalPdfBlobUrl(p: ProposalPdfInput): Promise<{ url:
   return { url: URL.createObjectURL(blob), filename };
 }
 
-function drawLabelValue(doc: jsPDF, label: string, value: string, x: number, y: number) {
+// -------- helpers --------
+
+function drawLabelValue(doc: jsPDF, label: string, value: string, x: number, y: number, maxWidth: number): number {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...BRAND_DARK);
   doc.text(label, x, y);
-  const lw = doc.getTextWidth(label);
+  const lw = doc.getTextWidth(label + " ");
   doc.setFont("helvetica", "normal");
   doc.setTextColor(60);
-  doc.text(" " + value, x + lw, y);
+  const remaining = maxWidth - lw;
+  const lines = doc.splitTextToSize(value, remaining) as string[];
+  lines.forEach((ln, i) => doc.text(ln, x + lw, y + i * 12));
+  return y + lines.length * 12 + 2;
 }
 
 function sectionHeader(doc: jsPDF, title: string, y: number) {
   const W = doc.internal.pageSize.getWidth();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(11.5);
   doc.setTextColor(...BRAND_DARK);
-  doc.text(spaced(title, " "), 40, y);
+  doc.text(spaced(title, " "), MARGIN, y);
   doc.setDrawColor(...BRAND_RED);
   doc.setLineWidth(2);
-  doc.line(40, y + 6, 90, y + 6);
+  doc.line(MARGIN, y + 6, MARGIN + 46, y + 6);
   doc.setDrawColor(...BORDER_GREY);
   doc.setLineWidth(0.5);
-  doc.line(92, y + 6, W - 40, y + 6);
+  doc.line(MARGIN + 48, y + 6, W - MARGIN, y + 6);
 }
 
-function paragraph(doc: jsPDF, text: string | undefined, x: number, y: number, maxW: number, H: number): number {
-  if (!text) return y;
+function paragraph(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxW: number,
+  _H: number,
+  ensureSpace: (needed: number, y: number) => number,
+): number {
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(10);
   doc.setTextColor(...BRAND_DARK);
-  const lines = doc.splitTextToSize(text, maxW);
+  const lines = doc.splitTextToSize(text, maxW) as string[];
   for (const ln of lines) {
-    if (y > H - 60) { doc.addPage(); y = 130; }
+    y = ensureSpace(14, y);
     doc.text(ln, x, y);
-    y += 14;
+    y += 13;
   }
   return y + 6;
 }
 
-function bulletList(doc: jsPDF, items: string[], x: number, y: number, maxW: number, H: number): number {
+function bulletList(
+  doc: jsPDF,
+  items: string[],
+  x: number,
+  y: number,
+  maxW: number,
+  _H: number,
+  ensureSpace: (needed: number, y: number) => number,
+): number {
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
+  doc.setFontSize(10);
   doc.setTextColor(...BRAND_DARK);
   for (const item of items) {
-    const lines = doc.splitTextToSize(item, maxW - 16);
+    const lines = doc.splitTextToSize(item, maxW - 16) as string[];
     for (let i = 0; i < lines.length; i++) {
-      if (y > H - 60) { doc.addPage(); y = 130; }
+      y = ensureSpace(14, y);
       if (i === 0) {
         doc.setTextColor(...BRAND_RED);
         doc.text("■", x, y);
         doc.setTextColor(...BRAND_DARK);
       }
       doc.text(lines[i], x + 14, y);
-      y += 14;
+      y += 13;
     }
-    y += 2;
+    y += 3;
   }
   return y + 6;
 }
@@ -532,14 +615,4 @@ function validUntil(dateStr: string): string {
   if (isNaN(d.getTime())) return dateStr;
   d.setDate(d.getDate() + 30);
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function currencySymbol(currency: string): string {
-  switch (currency) {
-    case "INR": return "₹";
-    case "USD": return "$";
-    case "EUR": return "€";
-    case "GBP": return "£";
-    default: return currency;
-  }
 }
