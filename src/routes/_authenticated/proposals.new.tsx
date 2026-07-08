@@ -18,7 +18,9 @@ import { formatMoney } from "@/lib/format";
 import { generateAiProposal } from "@/lib/ai.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Sparkles, Check, Users, Cog, Zap, DollarSign, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react";
+import { Sparkles, Check, Users, Cog, Zap, DollarSign, ChevronLeft, ChevronRight, PlusCircle, AlertCircle } from "lucide-react";
+import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type QuotationType } from "@/lib/terms";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
   component: NewProposalWizard,
