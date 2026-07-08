@@ -139,8 +139,22 @@ function NewProposalWizard() {
     return data.id;
   };
 
+  // Validation gate for "Generate"
+  const validationErrors = useMemo(() => {
+    const errs: string[] = [];
+    const hasCustomer = customerId || newCustomer.company_name || newCustomer.customer_name;
+    if (!hasCustomer) errs.push("Customer / company");
+    if (!product) errs.push("Product type");
+    if (!capacity) errs.push("Capacity");
+    if (!currentMachines.length) errs.push("At least one machine");
+    if (currentMachines.some(m => !m.unit_price || m.unit_price <= 0)) errs.push("Unit price for every machine");
+    if (!termsTemplateId) errs.push("Terms & conditions template");
+    return errs;
+  }, [customerId, newCustomer, product, capacity, currentMachines, termsTemplateId]);
+
   const create = useMutation({
     mutationFn: async () => {
+      if (validationErrors.length) throw new Error("Please complete: " + validationErrors.join(", "));
       setGenerating(true);
       const cust_id = await ensureCustomer();
       const cust = customers.find(c => c.id === cust_id) ?? { ...newCustomer };
@@ -177,7 +191,9 @@ function NewProposalWizard() {
         commercials: commercials as any,
         ai_content: ai as any,
         template,
-      }).select("*").single();
+        quotation_type: quotationType,
+        terms_template_id: termsTemplateId || null,
+      } as any).select("*").single();
       if (error) throw error;
       return data;
     },
