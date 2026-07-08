@@ -20,13 +20,14 @@ export const Route = createFileRoute("/_authenticated")({
   component: AppShell,
 });
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: any; highlight?: boolean };
+const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/proposals", label: "Proposals", icon: FileText },
   { to: "/proposals/new", label: "New Proposal", icon: PlusCircle, highlight: true },
   { to: "/settings/terms", label: "Terms Library", icon: ScrollText },
-] as const;
+];
 
 function AppShell() {
   const { user } = Route.useRouteContext();
