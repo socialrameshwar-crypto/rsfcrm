@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.seed_default_terms_templates(uuid);

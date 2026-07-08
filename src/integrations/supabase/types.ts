@@ -236,10 +236,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      seed_default_terms_templates: {
-        Args: { _user: string }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
