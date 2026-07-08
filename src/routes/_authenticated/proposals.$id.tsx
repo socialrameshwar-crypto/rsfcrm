@@ -42,7 +42,7 @@ function ProposalDetail() {
 
   const patch = useMutation({
     mutationFn: async (patch: Record<string, any>) => {
-      const { error } = await supabase.from("proposals").update(patch).eq("id", id);
+      const { error } = await (supabase.from("proposals").update as any)(patch).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
