@@ -7,14 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
 import { PRODUCT_TYPES, STATUSES, TEMPLATES } from "@/lib/proposal-catalog";
 import { generateProposalPdf, getProposalPdfBlobUrl } from "@/lib/pdf";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 
@@ -30,6 +29,8 @@ function ProposalDetail() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewZoom, setPreviewZoom] = useState(100);
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
@@ -71,7 +72,6 @@ function ProposalDetail() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["proposal", id] });
       qc.invalidateQueries({ queryKey: ["proposals-list"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -118,7 +118,12 @@ function ProposalDetail() {
     terms: termsClauses,
   };
 
-  const downloadPdf = () => { generateProposalPdf(pdfInput); };
+  const downloadPdf = () => { generateProposalPdf(pdfInput); toast.success("Downloading PDF"); };
+  const printPdf = () => {
+    if (!previewUrl) return openPreview();
+    const w = window.open(previewUrl, "_blank");
+    if (w) setTimeout(() => w.print?.(), 600);
+  };
 
   const openPreview = async () => {
     setPreviewOpen(true);
@@ -135,6 +140,18 @@ function ProposalDetail() {
     }
   };
 
+  const saveAiField = (key: keyof AiProposalContent, value: string | string[]) => {
+    const next = { ...ai, [key]: value } as AiProposalContent;
+    patch.mutate({ ai_content: next }, { onSuccess: () => toast.success("Saved") });
+  };
+
+  const saveMachines = (next: Machine[]) => {
+    const subtotal = next.reduce((s, m) => s + (Number(m.unit_price) || 0) * (Number(m.qty) || 0), 0);
+    const gst = commercials.gst_percent ? subtotal * (Number(commercials.gst_percent) / 100) : 0;
+    const total = subtotal + gst + (Number(commercials.freight) || 0) + (Number(commercials.installation) || 0) - (Number(commercials.discount) || 0);
+    patch.mutate({ machines: next as any, total_value: Math.max(0, total) }, { onSuccess: () => toast.success("Machines updated") });
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -149,28 +166,73 @@ function ProposalDetail() {
           <Button variant="outline" onClick={() => confirm("Delete this proposal?") && del.mutate()}>
             <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
           </Button>
-          <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview PDF</Button>
-          <Button onClick={downloadPdf} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download PDF</Button>
+          <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
+          <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
         </div>
       </div>
 
+      {/* Preview modal */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col gap-0">
           <DialogHeader className="px-5 py-3 border-b flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-base">Proposal Preview · {p.proposal_number}</DialogTitle>
-            <Button size="sm" onClick={downloadPdf} className="gradient-primary mr-8">
-              <Download className="h-4 w-4 mr-1" /> Download
-            </Button>
+            <div className="flex items-center gap-2 mr-8">
+              <Button size="icon" variant="ghost" onClick={() => setPreviewZoom(z => Math.max(50, z - 10))}><ZoomOut className="h-4 w-4" /></Button>
+              <span className="text-xs w-10 text-center tabular-nums">{previewZoom}%</span>
+              <Button size="icon" variant="ghost" onClick={() => setPreviewZoom(z => Math.min(200, z + 10))}><ZoomIn className="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline" onClick={printPdf}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+              <Button size="sm" onClick={downloadPdf} className="gradient-primary">
+                <Download className="h-4 w-4 mr-1" /> Download
+              </Button>
+            </div>
           </DialogHeader>
-          <div className="flex-1 bg-muted/40 overflow-hidden">
+          <div className="flex-1 bg-muted/40 overflow-auto">
             {previewLoading || !previewUrl ? (
               <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Rendering branded proposal…
               </div>
             ) : (
-              <iframe src={previewUrl} title="Proposal preview" className="w-full h-full border-0" />
+              <div style={{ width: `${previewZoom}%`, height: "100%", margin: "0 auto", transition: "width 150ms" }}>
+                <iframe src={previewUrl} title="Proposal preview" className="w-full h-full border-0 bg-white shadow" />
+              </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Download modal */}
+      <Dialog open={downloadOpen} onOpenChange={setDownloadOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Download proposal</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Choose how you'd like to export <span className="font-medium">{p.proposal_number}</span>.</p>
+            <div className="grid gap-2">
+              <Button className="justify-start gradient-primary" onClick={() => { downloadPdf(); setDownloadOpen(false); }}>
+                <Download className="h-4 w-4 mr-2" /> Download branded PDF
+              </Button>
+              <Button variant="outline" className="justify-start" onClick={() => { setDownloadOpen(false); openPreview(); }}>
+                <Eye className="h-4 w-4 mr-2" /> Preview before download
+              </Button>
+              <Button variant="outline" className="justify-start" onClick={() => { setDownloadOpen(false); printPdf(); }}>
+                <Printer className="h-4 w-4 mr-2" /> Open print dialog
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start"
+                onClick={() => {
+                  const subject = encodeURIComponent(`${p.proposal_number} · ${p.title}`);
+                  const body = encodeURIComponent(`Dear ${cust.contact_person || cust.customer_name || "Sir/Madam"},\n\nPlease find attached our proposal ${p.proposal_number} for ${productLabel}.\n\nBest regards,\nRameshwar Steel Fab`);
+                  window.location.href = `mailto:${cust.email || ""}?subject=${subject}&body=${body}`;
+                  setDownloadOpen(false);
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2" /> Draft email to customer
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDownloadOpen(false)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -183,7 +245,7 @@ function ProposalDetail() {
         <Card className="p-5 shadow-elegant">
           <div className="text-xs text-muted-foreground">Status</div>
           <div className="mt-2 flex items-center gap-2">
-            <Select value={p.status} onValueChange={v => patch.mutate({ status: v })}>
+            <Select value={p.status} onValueChange={v => patch.mutate({ status: v }, { onSuccess: () => toast.success("Status updated") })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
             </Select>
@@ -230,46 +292,23 @@ function ProposalDetail() {
         </Card>
       </div>
 
-      <Card className="p-5 shadow-elegant">
-        <h3 className="font-semibold mb-3">Machine List</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-muted-foreground border-b">
-              <tr><th className="py-2 pr-2">#</th><th>Machine</th><th>Qty</th><th>Capacity</th><th>Motor</th><th>MOC</th><th className="text-right">Unit price</th><th className="text-right">Amount</th></tr>
-            </thead>
-            <tbody>
-              {machines.map((m, i) => (
-                <tr key={i} className="border-b last:border-0">
-                  <td className="py-2 pr-2">{i + 1}</td>
-                  <td>{m.name}</td>
-                  <td>{m.qty}</td>
-                  <td>{m.capacity}</td>
-                  <td>{m.motor}</td>
-                  <td>{m.material}</td>
-                  <td className="text-right">{formatMoney(m.unit_price, p.currency)}</td>
-                  <td className="text-right font-medium">{formatMoney(m.unit_price * m.qty, p.currency)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <EditableMachineTable machines={machines} currency={p.currency} onSave={saveMachines} />
 
       <Card className="p-5 shadow-elegant">
-        <h3 className="font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Technical Proposal</h3>
+        <h3 className="font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Technical Proposal <span className="text-xs font-normal text-muted-foreground">— click any section to edit</span></h3>
         <div className="space-y-5 text-sm leading-relaxed">
-          <Section title="Executive Summary" body={ai.executive_summary} />
-          <Section title="Company Introduction" body={ai.company_introduction} />
-          <Section title="Project Overview" body={ai.project_overview} />
-          <Section title="Scope of Supply" body={ai.scope_of_supply} />
-          <Section title="Manufacturing Process" body={ai.manufacturing_process} />
-          <SectionBullets title="Advantages" items={ai.advantages} />
-          <SectionBullets title="Safety Features" items={ai.safety_features} />
-          <Section title="Quality Assurance" body={ai.quality_assurance} />
-          <Section title="Installation & Commissioning" body={ai.installation} />
-          <Section title="Warranty" body={ai.warranty} />
-          <Section title="After Sales Support" body={ai.after_sales} />
-          <Section title="Why Rameshwar Steel Fab" body={ai.value_proposition} />
+          <EditableSection title="Executive Summary" value={ai.executive_summary} onSave={v => saveAiField("executive_summary", v)} />
+          <EditableSection title="Company Introduction" value={ai.company_introduction} onSave={v => saveAiField("company_introduction", v)} />
+          <EditableSection title="Project Overview" value={ai.project_overview} onSave={v => saveAiField("project_overview", v)} />
+          <EditableSection title="Scope of Supply" value={ai.scope_of_supply} onSave={v => saveAiField("scope_of_supply", v)} />
+          <EditableSection title="Manufacturing Process" value={ai.manufacturing_process} onSave={v => saveAiField("manufacturing_process", v)} />
+          <EditableBulletsSection title="Advantages" items={ai.advantages} onSave={v => saveAiField("advantages", v)} />
+          <EditableBulletsSection title="Safety Features" items={ai.safety_features} onSave={v => saveAiField("safety_features", v)} />
+          <EditableSection title="Quality Assurance" value={ai.quality_assurance} onSave={v => saveAiField("quality_assurance", v)} />
+          <EditableSection title="Installation & Commissioning" value={ai.installation} onSave={v => saveAiField("installation", v)} />
+          <EditableSection title="Warranty" value={ai.warranty} onSave={v => saveAiField("warranty", v)} />
+          <EditableSection title="After Sales Support" value={ai.after_sales} onSave={v => saveAiField("after_sales", v)} />
+          <EditableSection title="Why Rameshwar Steel Fab" value={ai.value_proposition} onSave={v => saveAiField("value_proposition", v)} />
         </div>
       </Card>
 
@@ -309,24 +348,141 @@ function Info({ k, v }: { k: string; v: string }) {
   );
 }
 
-function Section({ title, body }: { title: string; body?: string }) {
-  if (!body) return null;
+function EditableSection({ title, value, onSave }: { title: string; value?: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || "");
+  useEffect(() => { setDraft(value || ""); }, [value]);
+  if (!value && !editing) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="font-semibold text-primary">{title}</div>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(true)}><Plus className="h-3 w-3 mr-1" /> Add</Button>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div>
-      <div className="font-semibold text-primary mb-1">{title}</div>
-      <p className="text-foreground/90 whitespace-pre-line">{body}</p>
+    <div className="group">
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-semibold text-primary">{title}</div>
+        {!editing ? (
+          <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition" onClick={() => setEditing(true)}>
+            <Pencil className="h-3 w-3 mr-1" /> Edit
+          </Button>
+        ) : (
+          <div className="flex gap-1">
+            <Button size="sm" variant="ghost" onClick={() => { setDraft(value || ""); setEditing(false); }}><X className="h-3 w-3" /></Button>
+            <Button size="sm" onClick={() => { onSave(draft); setEditing(false); }}><Check className="h-3 w-3 mr-1" /> Save</Button>
+          </div>
+        )}
+      </div>
+      {editing ? (
+        <Textarea value={draft} onChange={e => setDraft(e.target.value)} rows={Math.max(4, Math.min(14, draft.split("\n").length + 1))} />
+      ) : (
+        <p className="text-foreground/90 whitespace-pre-line">{value}</p>
+      )}
     </div>
   );
 }
 
-function SectionBullets({ title, items }: { title: string; items?: string[] }) {
-  if (!items?.length) return null;
+function EditableBulletsSection({ title, items, onSave }: { title: string; items?: string[]; onSave: (v: string[]) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState((items ?? []).join("\n"));
+  useEffect(() => { setDraft((items ?? []).join("\n")); }, [items]);
+  const list = items ?? [];
+  if (!list.length && !editing) {
+    return (
+      <div className="flex items-center justify-between">
+        <div className="font-semibold text-primary">{title}</div>
+        <Button size="sm" variant="ghost" onClick={() => setEditing(true)}><Plus className="h-3 w-3 mr-1" /> Add</Button>
+      </div>
+    );
+  }
   return (
-    <div>
-      <div className="font-semibold text-primary mb-1">{title}</div>
-      <ul className="list-disc pl-5 space-y-1">
-        {items.map((i, k) => <li key={k}>{i}</li>)}
-      </ul>
+    <div className="group">
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-semibold text-primary">{title}</div>
+        {!editing ? (
+          <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition" onClick={() => setEditing(true)}>
+            <Pencil className="h-3 w-3 mr-1" /> Edit
+          </Button>
+        ) : (
+          <div className="flex gap-1">
+            <Button size="sm" variant="ghost" onClick={() => { setDraft(list.join("\n")); setEditing(false); }}><X className="h-3 w-3" /></Button>
+            <Button size="sm" onClick={() => { onSave(draft.split("\n").map(s => s.trim()).filter(Boolean)); setEditing(false); }}><Check className="h-3 w-3 mr-1" /> Save</Button>
+          </div>
+        )}
+      </div>
+      {editing ? (
+        <Textarea value={draft} onChange={e => setDraft(e.target.value)} rows={Math.max(4, draft.split("\n").length + 1)} placeholder="One bullet per line" />
+      ) : (
+        <ul className="list-disc pl-5 space-y-1">{list.map((i, k) => <li key={k}>{i}</li>)}</ul>
+      )}
     </div>
+  );
+}
+
+function EditableMachineTable({ machines, currency, onSave }: { machines: Machine[]; currency: string; onSave: (m: Machine[]) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [rows, setRows] = useState<Machine[]>(machines);
+  const initialRef = useRef(machines);
+  useEffect(() => { setRows(machines); initialRef.current = machines; }, [machines]);
+
+  const update = (i: number, patch: Partial<Machine>) => {
+    setRows(r => r.map((row, k) => k === i ? { ...row, ...patch } : row));
+  };
+  const addRow = () => setRows(r => [...r, { name: "New machine", qty: 1, capacity: "", motor: "", material: "SS 304", unit_price: 0 } as Machine]);
+  const removeRow = (i: number) => setRows(r => r.filter((_, k) => k !== i));
+
+  const subtotal = useMemo(() => rows.reduce((s, m) => s + (Number(m.unit_price) || 0) * (Number(m.qty) || 0), 0), [rows]);
+
+  return (
+    <Card className="p-5 shadow-elegant">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold">Machine List</h3>
+        {!editing ? (
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}><Pencil className="h-3 w-3 mr-1" /> Edit</Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={addRow}><Plus className="h-3 w-3 mr-1" /> Add row</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setRows(initialRef.current); setEditing(false); }}><X className="h-3 w-3 mr-1" /> Cancel</Button>
+            <Button size="sm" onClick={() => { onSave(rows); setEditing(false); }}><Check className="h-3 w-3 mr-1" /> Save</Button>
+          </div>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-xs uppercase text-muted-foreground border-b">
+            <tr>
+              <th className="py-2 pr-2">#</th><th>Machine</th><th>Qty</th><th>Capacity</th><th>Motor</th><th>MOC</th><th className="text-right">Unit price</th><th className="text-right">Amount</th>
+              {editing && <th></th>}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((m, i) => (
+              <tr key={i} className="border-b last:border-0 align-top">
+                <td className="py-2 pr-2">{i + 1}</td>
+                <td>{editing ? <Input value={m.name} onChange={e => update(i, { name: e.target.value })} className="h-8" /> : m.name}</td>
+                <td>{editing ? <Input type="number" min={0} value={m.qty} onChange={e => update(i, { qty: Number(e.target.value) })} className="h-8 w-20" /> : m.qty}</td>
+                <td>{editing ? <Input value={m.capacity} onChange={e => update(i, { capacity: e.target.value })} className="h-8" /> : m.capacity}</td>
+                <td>{editing ? <Input value={m.motor} onChange={e => update(i, { motor: e.target.value })} className="h-8" /> : m.motor}</td>
+                <td>{editing ? <Input value={m.material} onChange={e => update(i, { material: e.target.value })} className="h-8" /> : m.material}</td>
+                <td className="text-right">{editing ? <Input type="number" min={0} value={m.unit_price} onChange={e => update(i, { unit_price: Number(e.target.value) })} className="h-8 w-28 text-right" /> : formatMoney(m.unit_price, currency)}</td>
+                <td className="text-right font-medium">{formatMoney((Number(m.unit_price) || 0) * (Number(m.qty) || 0), currency)}</td>
+                {editing && <td><Button size="icon" variant="ghost" onClick={() => removeRow(i)}><Trash2 className="h-3 w-3 text-destructive" /></Button></td>}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t">
+              <td colSpan={7} className="pt-2 text-right text-xs text-muted-foreground">Subtotal</td>
+              <td className="pt-2 text-right font-semibold">{formatMoney(subtotal, currency)}</td>
+              {editing && <td />}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </Card>
   );
 }
