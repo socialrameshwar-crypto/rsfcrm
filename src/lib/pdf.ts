@@ -4,6 +4,8 @@ import type { AiProposalContent } from "./ai.functions";
 import type { Machine, Utilities, Commercials } from "./proposal-catalog";
 import logoAsset from "@/assets/rsf-logo.png.asset.json";
 
+export interface ProposalTermsClause { title: string; body: string }
+
 export interface ProposalPdfInput {
   proposal_number: string;
   title: string;
@@ -27,6 +29,8 @@ export interface ProposalPdfInput {
   commercials: Commercials;
   ai: AiProposalContent;
   template: string;
+  quotation_type?: "domestic" | "export";
+  terms?: ProposalTermsClause[];
 }
 
 // Rameshwar Steel Fab brand palette (matches printed brochure)
