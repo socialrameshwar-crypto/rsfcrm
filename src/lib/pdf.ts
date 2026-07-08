@@ -510,6 +510,13 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
       : bulletList(doc, body as string[], MARGIN, cursor, W - MARGIN * 2, H, ensureSpace);
   }
 
+  // Finalise footers with correct page counts
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    drawFooter(i, totalPages);
+  }
+
   return { doc, filename: `${p.proposal_number.replace(/\//g, "_")}.pdf` };
 }
 
