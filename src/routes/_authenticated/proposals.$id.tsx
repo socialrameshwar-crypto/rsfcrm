@@ -132,9 +132,30 @@ function ProposalDetail() {
           <Button variant="outline" onClick={() => confirm("Delete this proposal?") && del.mutate()}>
             <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
           </Button>
+          <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview PDF</Button>
           <Button onClick={downloadPdf} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download PDF</Button>
         </div>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col gap-0">
+          <DialogHeader className="px-5 py-3 border-b flex-row items-center justify-between space-y-0">
+            <DialogTitle className="text-base">Proposal Preview · {p.proposal_number}</DialogTitle>
+            <Button size="sm" onClick={downloadPdf} className="gradient-primary mr-8">
+              <Download className="h-4 w-4 mr-1" /> Download
+            </Button>
+          </DialogHeader>
+          <div className="flex-1 bg-muted/40 overflow-hidden">
+            {previewLoading || !previewUrl ? (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Rendering branded proposal…
+              </div>
+            ) : (
+              <iframe src={previewUrl} title="Proposal preview" className="w-full h-full border-0" />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-5 shadow-elegant">
