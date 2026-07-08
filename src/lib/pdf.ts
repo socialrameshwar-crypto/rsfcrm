@@ -360,16 +360,29 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   cursor = CONTENT_TOP;
   sectionHeader(doc, "TERMS & CONDITIONS", cursor);
   cursor += 24;
+  const termsRows: [string, string][] = (p.terms && p.terms.length
+    ? p.terms
+    : isExport
+      ? [
+          { title: "Incoterms", body: "FOB Mundra Port, India (Incoterms 2020)." },
+          { title: "Export Packing", body: "Sea-worthy export packing with ISPM-15 fumigation certificate." },
+          { title: "Payment", body: "30% advance; 70% against copy of shipping documents." },
+          { title: "Delivery", body: "6-8 weeks from receipt of advance and technical clearance." },
+          { title: "Warranty", body: "18 months from date of Bill of Lading." },
+          { title: "Validity", body: `Offer valid until ${validUntil(p.date)}` },
+        ]
+      : [
+          { title: "Freight", body: "Extra at Actual" },
+          { title: "GST", body: `@ ${c.tax_rate}% extra with HSN Code: 84798910` },
+          { title: "Payment", body: "50% advance with commercial order; 50% against Proforma Invoice before dispatch, after FAT" },
+          { title: "Delivery", body: "14 working days from date of receipt of advance with commercial order" },
+          { title: "Warranty", body: "24 months from date of Invoice" },
+          { title: "Validity", body: `Offer valid until ${validUntil(p.date)}` },
+        ]
+  ).map(t => [t.title, t.body] as [string, string]);
   autoTable(doc, {
     startY: cursor,
-    body: [
-      ["Freight", "Extra at Actual"],
-      ["IGST", `@ ${c.tax_rate}% Extra with HSN Code: 84798910`],
-      ["Payment", "50% advance with commercial order; 50% against Proforma Invoice before dispatch, After FAT"],
-      ["Delivery", "14 Working Days from date of receipt of advance with commercial order"],
-      ["Warranty", "24 Months from date of Invoice"],
-      ["Validity", `Offer valid until ${validUntil(p.date)}`],
-    ],
+    body: termsRows,
     theme: "grid",
     styles: { fontSize: 10, cellPadding: 7, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, valign: "middle", overflow: "linebreak" },
     columnStyles: {
