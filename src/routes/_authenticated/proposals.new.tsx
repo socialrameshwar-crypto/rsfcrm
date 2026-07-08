@@ -86,6 +86,41 @@ function NewProposalWizard() {
     },
   });
 
+  const selectedCust = customers.find(c => c.id === customerId);
+  const custCountry = selectedCust?.country || newCustomer.country;
+
+  // Terms library
+  const { data: templates = [] } = useQuery({
+    queryKey: ["terms-templates"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) await ensureDefaultTemplates(u.user.id);
+      return fetchTemplates();
+    },
+  });
+  const [quotationType, setQuotationType] = useState<QuotationType>("domestic");
+  const [modeAutoSet, setModeAutoSet] = useState(false);
+  const [termsTemplateId, setTermsTemplateId] = useState<string>("");
+
+  // Auto-infer mode from country once
+  useMemo(() => {
+    if (custCountry && !modeAutoSet) {
+      setQuotationType(inferModeFromCountry(custCountry));
+      setModeAutoSet(true);
+    }
+  }, [custCountry, modeAutoSet]);
+
+  // Auto-pick default template for chosen mode
+  useMemo(() => {
+    if (!templates.length) return;
+    const scoped = templates.filter(t => t.scope === quotationType);
+    if (!scoped.length) return;
+    if (!termsTemplateId || !scoped.find(t => t.id === termsTemplateId)) {
+      const def = scoped.find(t => t.is_default) ?? scoped[0];
+      setTermsTemplateId(def.id);
+    }
+  }, [templates, quotationType, termsTemplateId]);
+
   const productLabel = PRODUCT_TYPES.find(p => p.value === product)?.label ?? "Plant";
 
   const ensureCustomer = async (): Promise<string | null> => {
