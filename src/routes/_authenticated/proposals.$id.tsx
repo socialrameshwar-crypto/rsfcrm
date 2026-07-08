@@ -228,14 +228,9 @@ function ProposalDetail() {
               <Button
                 variant="outline"
                 className="justify-start"
-                onClick={() => {
-                  const subject = encodeURIComponent(`${p.proposal_number} · ${p.title}`);
-                  const body = encodeURIComponent(`Dear ${cust.contact_person || cust.customer_name || "Sir/Madam"},\n\nPlease find attached our proposal ${p.proposal_number} for ${productLabel}.\n\nBest regards,\nRameshwar Steel Fab`);
-                  window.location.href = `mailto:${cust.email || ""}?subject=${subject}&body=${body}`;
-                  setDownloadOpen(false);
-                }}
+                onClick={() => { setDownloadOpen(false); setEmailOpen(true); }}
               >
-                <Sparkles className="h-4 w-4 mr-2" /> Draft email to customer
+                <Mail className="h-4 w-4 mr-2" /> Compose email with AI
               </Button>
             </div>
           </div>
@@ -244,6 +239,32 @@ function ProposalDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EmailComposer
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        ctx={{
+          proposal: {
+            proposal_number: p.proposal_number,
+            title: p.title,
+            product_label: productLabel,
+            capacity: p.capacity,
+            automation: p.automation,
+            material: p.material,
+            currency: p.currency,
+            total_value: Number(p.total_value || 0),
+            quotation_type: (((p as any).quotation_type as "domestic" | "export") ?? "domestic"),
+          },
+          customer: {
+            company_name: cust.company_name,
+            contact_person: cust.contact_person,
+            country: cust.country,
+            industry: cust.industry,
+            email: cust.email,
+          },
+        }}
+      />
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-5 shadow-elegant">
