@@ -190,7 +190,8 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   doc.setTextColor(255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(17);
-  doc.text(spaced("QUOTATION", "  "), W / 2, cursor + 26, { align: "center" });
+  const banner = p.quotation_type === "export" ? "EXPORT QUOTATION" : "QUOTATION";
+  doc.text(spaced(banner, "  "), W / 2, cursor + 26, { align: "center" });
   cursor += 56;
 
   // Info strip: Quote No / Date / Valid Until
