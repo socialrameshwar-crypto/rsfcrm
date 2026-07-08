@@ -432,7 +432,7 @@ function NewProposalWizard() {
 
       {step === 5 && (
         <Card className="p-6 shadow-elegant space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h2 className="font-semibold text-lg">Commercial Quotation</h2>
               <p className="text-sm text-muted-foreground">All figures in {currency}.</p>
@@ -442,6 +442,45 @@ function NewProposalWizard() {
               <Input type="number" value={taxRate} onChange={e => setTaxRate(Number(e.target.value) || 0)} className="w-24" />
             </div>
           </div>
+
+          {/* Quotation type + Terms library */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border bg-secondary/30">
+            <div>
+              <Label>Quotation type</Label>
+              <Select value={quotationType} onValueChange={v => { setQuotationType(v as QuotationType); setModeAutoSet(true); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="domestic">Domestic (India — GST / HSN)</SelectItem>
+                  <SelectItem value="export">Export (Incoterms / FOB)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {custCountry ? `Suggested from customer country: ${custCountry}` : "Set customer country to auto-suggest"}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>Terms & conditions template</Label>
+                <Button variant="ghost" size="sm" asChild className="h-6 px-2 text-[11px]">
+                  <Link to="/settings/terms">Manage library</Link>
+                </Button>
+              </div>
+              <Select value={termsTemplateId} onValueChange={setTermsTemplateId}>
+                <SelectTrigger><SelectValue placeholder="Select a template…" /></SelectTrigger>
+                <SelectContent>
+                  {templates.filter(t => t.scope === quotationType).map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}{t.is_default ? " · default" : ""}
+                    </SelectItem>
+                  ))}
+                  {templates.filter(t => t.scope === quotationType).length === 0 && (
+                    <div className="text-xs text-muted-foreground px-3 py-2">No templates for this scope. Create one in Terms Library.</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-lg border">
               <table className="w-full text-sm">
@@ -466,7 +505,7 @@ function NewProposalWizard() {
                 </tbody>
               </table>
             </div>
-            <div className="rounded-lg border p-5 bg-gradient-to-br from-primary/5 to-accent/10">
+            <div className="rounded-lg border p-5 bg-gradient-to-br from-primary/5 to-accent/10 space-y-3">
               <div className="flex items-start gap-3">
                 <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
@@ -476,16 +515,26 @@ function NewProposalWizard() {
                     executive summary, technical description, scope, safety, warranty and value
                     proposition — plus produce a downloadable branded PDF.
                   </p>
-                  <Button
-                    onClick={() => create.mutate()}
-                    disabled={generating || create.isPending}
-                    className="mt-4 gradient-primary"
-                    size="lg"
-                  >
-                    {generating ? "Generating with AI…" : "✨ Generate Proposal"}
-                  </Button>
                 </div>
               </div>
+              {validationErrors.length > 0 && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+                  <div className="flex items-center gap-1.5 font-semibold mb-1">
+                    <AlertCircle className="h-3.5 w-3.5" /> Complete before generating:
+                  </div>
+                  <ul className="list-disc pl-5 space-y-0.5">
+                    {validationErrors.map(e => <li key={e}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
+              <Button
+                onClick={() => create.mutate()}
+                disabled={generating || create.isPending || validationErrors.length > 0}
+                className="mt-1 gradient-primary w-full"
+                size="lg"
+              >
+                {generating ? "Generating with AI…" : "✨ Generate Proposal"}
+              </Button>
             </div>
           </div>
         </Card>
