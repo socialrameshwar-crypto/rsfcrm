@@ -15,6 +15,7 @@ export interface ProposalPdfInput {
     mobile?: string | null;
     country?: string | null;
     city?: string | null;
+    address?: string | null;
   };
   product_label: string;
   capacity: string;
@@ -28,167 +29,363 @@ export interface ProposalPdfInput {
   template: string;
 }
 
-const TEMPLATE_COLORS: Record<string, { primary: [number, number, number]; accent: [number, number, number] }> = {
-  "corporate-blue": { primary: [11, 61, 145], accent: [30, 111, 217] },
-  "premium-black": { primary: [17, 17, 17], accent: [199, 158, 74] },
-  "industrial-grey": { primary: [55, 65, 81], accent: [107, 114, 128] },
-  "modern-white": { primary: [15, 23, 42], accent: [30, 111, 217] },
-  "export-edition": { primary: [7, 51, 102], accent: [220, 38, 38] },
-};
+// Rameshwar Steel Fab brand palette (matches printed brochure reference)
+const BRAND_RED: [number, number, number] = [200, 16, 46]; // #C8102E
+const BRAND_DARK: [number, number, number] = [17, 17, 17];
+const SOFT_GREY: [number, number, number] = [245, 246, 248];
+const BORDER_GREY: [number, number, number] = [220, 222, 226];
+const TEXT_GREY: [number, number, number] = [95, 99, 108];
+const PINK_TINT: [number, number, number] = [253, 240, 242];
 
-export function generateProposalPdf(p: ProposalPdfInput) {
+async function loadLogo(): Promise<string | null> {
+  try {
+    const res = await fetch("/rsf-logo.png");
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+const spaced = (s: string, gap = " ") => s.split("").join(gap);
+
+export async function generateProposalPdf(p: ProposalPdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const colors = TEMPLATE_COLORS[p.template] ?? TEMPLATE_COLORS["corporate-blue"];
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
+  const MARGIN = 40;
+
+  const logoDataUrl = await loadLogo();
 
   const drawHeader = () => {
-    doc.setFillColor(...colors.primary);
-    doc.rect(0, 0, W, 60, "F");
-    doc.setTextColor(255);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("RAMESHWAR STEEL FAB", 40, 26);
+    // Logo
+    if (logoDataUrl) {
+      try { doc.addImage(logoDataUrl, "PNG", MARGIN, 24, 150, 55); } catch { /* noop */ }
+    } else {
+      doc.setTextColor(...BRAND_RED);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("RAMESHWAR", MARGIN, 48);
+      doc.setFontSize(10);
+      doc.setTextColor(...BRAND_RED);
+      doc.text("S T E E L   F A B", MARGIN, 64);
+    }
+    // Right block
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(...BRAND_RED);
+    doc.text("Your Success  •  Our Commitment  •  More than Suppliers — Partners", W - MARGIN, 34, { align: "right" });
     doc.setFont("helvetica", "normal");
+    doc.setTextColor(60);
     doc.setFontSize(9);
-    doc.text("Manufacturer of Soap, Detergent, LABSA & Industrial Process Plants", 40, 42);
-    doc.setFontSize(9);
-    doc.text(p.proposal_number, W - 40, 26, { align: "right" });
-    doc.text(p.date, W - 40, 42, { align: "right" });
-  };
-  const drawFooter = (pageNum: number) => {
-    doc.setDrawColor(...colors.accent);
-    doc.setLineWidth(0.8);
-    doc.line(40, H - 40, W - 40, H - 40);
+    doc.text("31, Sayona Industrial Estate, Near Panchratna Estate, Ramol Cross Road,", W - MARGIN, 48, { align: "right" });
+    doc.text("Phase IV, Vatva GIDC, Ahmedabad (Gujarat) – 382445", W - MARGIN, 60, { align: "right" });
+    doc.text("+91 97256 05639   |   Sales@rameshwar.co.in   |   www.rameshwar.co.in", W - MARGIN, 72, { align: "right" });
+    doc.setTextColor(...TEXT_GREY);
     doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text("Rameshwar Steel Fab  |  sales@rameshwarsteelfab.com  |  www.rameshwarsteelfab.com", 40, H - 26);
-    doc.text(`Page ${pageNum}`, W - 40, H - 26, { align: "right" });
+    doc.text("GSTIN: 24ABEPL9780J1ZL", W - MARGIN, 84, { align: "right" });
+    // Divider
+    doc.setDrawColor(...BORDER_GREY);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, 100, W - MARGIN, 100);
   };
 
-  // COVER
-  doc.setFillColor(...colors.primary);
-  doc.rect(0, 0, W, H, "F");
-  doc.setTextColor(255);
-  doc.setFontSize(11);
-  doc.text("TECHNICAL & COMMERCIAL PROPOSAL", 40, 120);
-  doc.setFontSize(30);
-  doc.setFont("helvetica", "bold");
-  const titleLines = doc.splitTextToSize(p.title, W - 80);
-  doc.text(titleLines, 40, 170);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(14);
-  doc.text(`For: ${p.customer.company_name || "Valued Customer"}`, 40, 260);
-  if (p.customer.country) doc.text(`Location: ${[p.customer.city, p.customer.country].filter(Boolean).join(", ")}`, 40, 285);
-  doc.setFontSize(11);
-  doc.text(`Proposal No.: ${p.proposal_number}`, 40, 330);
-  doc.text(`Date: ${p.date}`, 40, 348);
-  doc.setFillColor(...colors.accent);
-  doc.rect(40, H - 140, W - 80, 3, "F");
-  doc.setFontSize(10);
-  doc.text("Prepared by Rameshwar Steel Fab  |  Engineering Excellence Since 1998", 40, H - 110);
+  const drawFooter = () => {
+    doc.setFillColor(...BRAND_RED);
+    doc.rect(0, H - 28, W, 28, "F");
+    doc.setTextColor(255);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.text(
+      `"Nation First … Always First …"   |   www.rameshwar.co.in   |   GSTIN: 24ABEPL9780J1ZL`,
+      W / 2,
+      H - 10,
+      { align: "center" }
+    );
+  };
 
-  const addPage = () => {
+  const newPage = () => {
     doc.addPage();
     drawHeader();
+    drawFooter();
   };
 
-  const section = (title: string, body?: string, bullets?: string[]) => {
-    if (cursor > H - 140) addPage(), (cursor = 90);
-    doc.setTextColor(...colors.primary);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text(title, 40, cursor);
-    cursor += 6;
-    doc.setDrawColor(...colors.accent);
-    doc.setLineWidth(1.2);
-    doc.line(40, cursor, 100, cursor);
-    cursor += 16;
-    doc.setTextColor(30);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    if (body) {
-      const lines = doc.splitTextToSize(body, W - 80);
-      for (const ln of lines) {
-        if (cursor > H - 60) addPage(), (cursor = 90);
-        doc.text(ln, 40, cursor);
-        cursor += 14;
-      }
-      cursor += 4;
+  const ensureSpace = (needed: number, cursor: number): number => {
+    if (cursor + needed > H - 60) {
+      newPage();
+      return 130;
     }
-    if (bullets) {
-      for (const b of bullets) {
-        const lines = doc.splitTextToSize(`•  ${b}`, W - 90);
-        for (const ln of lines) {
-          if (cursor > H - 60) addPage(), (cursor = 90);
-          doc.text(ln, 50, cursor);
-          cursor += 14;
-        }
-      }
-      cursor += 6;
-    }
+    return cursor;
   };
 
-  addPage();
-  let cursor = 90;
+  // ============ PAGE 1 ============
+  drawHeader();
+  drawFooter();
 
-  // Customer block
-  doc.setFillColor(245, 247, 251);
-  doc.rect(40, cursor - 10, W - 80, 90, "F");
-  doc.setTextColor(...colors.primary);
+  let cursor = 120;
+
+  // QUOTATION banner
+  doc.setFillColor(...BRAND_RED);
+  doc.rect(MARGIN, cursor, W - MARGIN * 2, 42, "F");
+  doc.setTextColor(255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("CUSTOMER DETAILS", 52, cursor + 8);
-  doc.setTextColor(30);
+  doc.setFontSize(18);
+  doc.text(spaced("QUOTATION", "  "), W / 2, cursor + 27, { align: "center" });
+  cursor += 60;
+
+  // Info strip: Quote No / Date / Valid Until
+  const infoH = 50;
+  doc.setFillColor(...SOFT_GREY);
+  doc.rect(MARGIN, cursor, W - MARGIN * 2, infoH, "F");
+  doc.setFillColor(...BRAND_RED);
+  doc.rect(MARGIN, cursor, 4, infoH, "F");
+  const colW = (W - MARGIN * 2) / 3;
+  const infoItems: [string, string, boolean][] = [
+    ["Quote No.", p.proposal_number, false],
+    ["Date", p.date, false],
+    ["Valid Until", validUntil(p.date), true],
+  ];
+  infoItems.forEach(([label, value, red], i) => {
+    const x = MARGIN + 20 + i * colW;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT_GREY);
+    doc.text(label, x, cursor + 20);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...(red ? BRAND_RED : BRAND_DARK));
+    doc.text(value, x, cursor + 38);
+  });
+  cursor += infoH + 20;
+
+  // Bill To / Subject two-column
+  const boxH = 110;
+  const halfW = (W - MARGIN * 2 - 16) / 2;
+  // Bill To
+  doc.setFillColor(...BRAND_RED);
+  doc.rect(MARGIN, cursor, 4, boxH, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text(spaced("BILL TO", " "), MARGIN + 16, cursor + 18);
+  doc.setFontSize(12);
+  doc.text((p.customer.contact_person || "Valued Customer").toUpperCase(), MARGIN + 16, cursor + 38);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  const cd = [
-    ["Company", p.customer.company_name || "-"],
-    ["Contact Person", p.customer.contact_person || "-"],
-    ["Email", p.customer.email || "-"],
-    ["Phone", p.customer.mobile || "-"],
-    ["Location", [p.customer.city, p.customer.country].filter(Boolean).join(", ") || "-"],
-  ];
-  cd.forEach((row, i) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(`${row[0]}:`, 52, cursor + 28 + i * 12);
-    doc.setFont("helvetica", "normal");
-    doc.text(String(row[1]), 150, cursor + 28 + i * 12);
-  });
-  cursor += 100;
+  doc.setTextColor(50);
+  doc.text(p.customer.company_name || "-", MARGIN + 16, cursor + 54);
+  doc.setFontSize(9);
+  let by = cursor + 70;
+  if (p.customer.mobile) { drawLabelValue(doc, "Mobile :-", p.customer.mobile, MARGIN + 16, by); by += 12; }
+  if (p.customer.email) { drawLabelValue(doc, "Email :-", p.customer.email, MARGIN + 16, by); by += 12; }
+  const addr = p.customer.address || [p.customer.city, p.customer.country].filter(Boolean).join(", ");
+  if (addr) drawLabelValue(doc, "Address :-", addr, MARGIN + 16, by);
 
-  section("Executive Summary", p.ai.executive_summary);
-  section("Company Introduction", p.ai.company_introduction);
-  section("Project Overview", p.ai.project_overview);
-  section("Scope of Supply", p.ai.scope_of_supply);
-  section("Manufacturing Process", p.ai.manufacturing_process);
-
-  // Machine list table
-  addPage();
-  cursor = 90;
-  doc.setTextColor(...colors.primary);
+  // Subject box (right, pink tint)
+  const subX = MARGIN + halfW + 16;
+  doc.setFillColor(...PINK_TINT);
+  doc.rect(subX, cursor, halfW, boxH, "F");
+  doc.setFillColor(...BRAND_RED);
+  doc.rect(subX, cursor, 4, boxH, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Machine Specifications & Scope", 40, cursor);
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text(spaced("SUBJECT", " "), subX + 16, cursor + 18);
+  doc.setTextColor(...BRAND_RED);
+  doc.setFontSize(11);
+  const subj = `Offer for ${p.product_label}`;
+  const subjLines = doc.splitTextToSize(subj, halfW - 24);
+  doc.text(subjLines, subX + 16, cursor + 38);
+  doc.setTextColor(...BRAND_DARK);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Capacity: ${p.capacity}`, subX + 16, cursor + 38 + subjLines.length * 14 + 6);
+  doc.text(`Automation: ${p.automation}  |  MOC: ${p.material}`, subX + 16, cursor + 38 + subjLines.length * 14 + 22);
+  cursor += boxH + 24;
+
+  // Greeting + intro
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text("Dear Sir,", MARGIN, cursor);
+  cursor += 16;
+  const intro = p.ai.executive_summary
+    || `Thank you for your valuable enquiry for the ${p.product_label}. We are pleased to submit our competitive quotation and look forward to a long-term business relationship.`;
+  const introLines = doc.splitTextToSize(intro, W - MARGIN * 2);
+  doc.text(introLines, MARGIN, cursor);
+  cursor += introLines.length * 13 + 14;
+
+  // Product table
+  const symbol = currencySymbol(p.currency);
+  autoTable(doc, {
+    startY: cursor,
+    head: [["SR.", "CAT.", "PRODUCT DESCRIPTION", "QTY.", `AMOUNT (${symbol})`]],
+    body: p.machines.map((m, i) => [
+      { content: String(i + 1), styles: { textColor: BRAND_RED, fontStyle: "bold", halign: "center" } },
+      { content: String.fromCharCode(65 + i), styles: { textColor: BRAND_RED, fontStyle: "bold", halign: "center" } },
+      {
+        content:
+          `${m.name}\n` +
+          `MOC: ${m.material}   |   Capacity: ${m.capacity}\n` +
+          `Motor: ${m.motor}   |   Qty: ${m.qty}`,
+        styles: { fontStyle: "normal" },
+      },
+      { content: `${m.qty} NOS.`, styles: { halign: "center" } },
+      { content: formatMoney(m.unit_price * m.qty, p.currency), styles: { halign: "right", fontStyle: "bold" } },
+    ]),
+    theme: "grid",
+    styles: { fontSize: 9, cellPadding: 7, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    headStyles: { fillColor: BRAND_DARK, textColor: 255, fontSize: 9.5, fontStyle: "bold", halign: "center" },
+    columnStyles: {
+      0: { cellWidth: 40, halign: "center" },
+      1: { cellWidth: 40, halign: "center" },
+      3: { cellWidth: 60, halign: "center" },
+      4: { cellWidth: 100, halign: "right" },
+    },
+    margin: { left: MARGIN, right: MARGIN },
+  });
+  cursor = (doc as any).lastAutoTable.finalY;
+
+  const c = p.commercials;
+  autoTable(doc, {
+    startY: cursor,
+    body: [
+      [{ content: "Sub-Total", styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } },
+       { content: formatMoney(c.machines_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: SOFT_GREY } }],
+      [{ content: `GST @ ${c.tax_rate}%  (HSN Code: 84798910)`, styles: { halign: "right" } },
+       { content: formatMoney(c.tax, p.currency), styles: { halign: "right" } }],
+      [{ content: spaced("NET TOTAL", " "), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } },
+       { content: formatMoney(c.grand_total, p.currency), styles: { halign: "right", fontStyle: "bold", fillColor: BRAND_RED, textColor: 255, fontSize: 12 } }],
+    ],
+    theme: "grid",
+    styles: { fontSize: 10, cellPadding: 8, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    columnStyles: {
+      0: { cellWidth: W - MARGIN * 2 - 140 },
+      1: { cellWidth: 140, halign: "right" },
+    },
+    margin: { left: MARGIN, right: MARGIN },
+  });
+  cursor = (doc as any).lastAutoTable.finalY + 20;
+
+  // ============ PAGE 2: Terms + Bank ============
+  newPage();
+  cursor = 130;
+  sectionHeader(doc, "TERMS & CONDITIONS", cursor);
+  cursor += 26;
+  autoTable(doc, {
+    startY: cursor,
+    body: [
+      ["Freight", "Extra at Actual"],
+      ["IGST", `@ ${c.tax_rate}% Extra with HSN Code: 84798910`],
+      ["Payment", "50% advance with commercial order; 50% against Proforma Invoice before dispatch, After FAT"],
+      ["Delivery", "14 Working Days from date of receipt of advance with commercial order"],
+      ["Warranty", "24 Months from date of Invoice"],
+      ["Validity", `Offer valid until ${validUntil(p.date)}`],
+    ],
+    theme: "grid",
+    styles: { fontSize: 10, cellPadding: 8, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK, valign: "middle" },
+    columnStyles: {
+      0: { cellWidth: 110, fontStyle: "bold", fillColor: SOFT_GREY },
+      1: { cellWidth: W - MARGIN * 2 - 110 },
+    },
+    margin: { left: MARGIN, right: MARGIN },
+  });
+  cursor = (doc as any).lastAutoTable.finalY + 20;
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND_DARK);
+  const closing = "We trust the above offer meets your requirements. Kindly confirm your order at the earliest to ensure timely delivery. We assure you of our best quality and services at all times.";
+  const cLines = doc.splitTextToSize(closing, W - MARGIN * 2);
+  doc.text(cLines, MARGIN, cursor);
+  cursor += cLines.length * 13 + 20;
+
+  // Red divider
+  doc.setDrawColor(...BRAND_RED);
+  doc.setLineWidth(1);
+  doc.line(MARGIN, cursor, W - MARGIN, cursor);
   cursor += 20;
+
+  // Signature + Bank
+  const sigColW = (W - MARGIN * 2 - 20) / 2;
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT_GREY);
+  doc.text("With warm regards,", MARGIN, cursor);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text("YAMINI MODI", MARGIN, cursor + 20);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND_RED);
+  doc.text("Manager – Sales", MARGIN, cursor + 36);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text("RAMESHWAR STEEL FAB", MARGIN, cursor + 50);
+  doc.text("M: +91 94099 49532", MARGIN, cursor + 64);
+
+  // Bank details box
+  const bx = MARGIN + sigColW + 20;
+  const bkH = 90;
+  doc.setFillColor(...SOFT_GREY);
+  doc.rect(bx, cursor - 12, sigColW, bkH, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text(spaced("BANK DETAILS", " "), bx + 12, cursor + 4);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Bank Name:  HDFC Bank", bx + 12, cursor + 24);
+  doc.text("A/C Name:  Rameshwar Steel Fab", bx + 12, cursor + 40);
+  doc.text("A/C No.:  XXXXXXXXXXXX", bx + 12, cursor + 56);
+  doc.text("IFSC:  HDFC0XXXXXX", bx + 12, cursor + 72);
+
+  // ============ PAGE 3+: Technical proposal ============
+  newPage();
+  cursor = 130;
+  sectionHeader(doc, "COMPANY INTRODUCTION", cursor);
+  cursor += 22;
+  cursor = paragraph(doc, p.ai.company_introduction, MARGIN, cursor, W - MARGIN * 2, H);
+
+  cursor = ensureSpace(60, cursor);
+  sectionHeader(doc, "PROJECT OVERVIEW", cursor);
+  cursor += 22;
+  cursor = paragraph(doc, p.ai.project_overview, MARGIN, cursor, W - MARGIN * 2, H);
+
+  cursor = ensureSpace(60, cursor);
+  sectionHeader(doc, "SCOPE OF SUPPLY", cursor);
+  cursor += 22;
+  cursor = paragraph(doc, p.ai.scope_of_supply, MARGIN, cursor, W - MARGIN * 2, H);
+
+  cursor = ensureSpace(60, cursor);
+  sectionHeader(doc, "MANUFACTURING PROCESS", cursor);
+  cursor += 22;
+  cursor = paragraph(doc, p.ai.manufacturing_process, MARGIN, cursor, W - MARGIN * 2, H);
+
+  // Machine specs table
+  cursor = ensureSpace(160, cursor);
+  sectionHeader(doc, "MACHINE SPECIFICATIONS", cursor);
+  cursor += 22;
   autoTable(doc, {
     startY: cursor,
     head: [["#", "Machine", "Qty", "Capacity", "Motor", "MOC"]],
     body: p.machines.map((m, i) => [i + 1, m.name, m.qty, m.capacity, m.motor, m.material]),
     theme: "grid",
-    styles: { fontSize: 9, cellPadding: 5 },
-    headStyles: { fillColor: colors.primary, textColor: 255 },
-    margin: { left: 40, right: 40 },
+    styles: { fontSize: 9, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    headStyles: { fillColor: BRAND_DARK, textColor: 255, fontStyle: "bold" },
+    margin: { left: MARGIN, right: MARGIN },
   });
   cursor = (doc as any).lastAutoTable.finalY + 20;
 
-  // Utility sheet
-  if (cursor > H - 200) addPage(), (cursor = 90);
-  doc.setTextColor(...colors.primary);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Utility Requirement", 40, cursor);
-  cursor += 20;
+  // Utilities
+  cursor = ensureSpace(220, cursor);
+  sectionHeader(doc, "UTILITY REQUIREMENT", cursor);
+  cursor += 22;
   const u = p.utilities;
   autoTable(doc, {
     startY: cursor,
@@ -206,78 +403,132 @@ export function generateProposalPdf(p: ProposalPdfInput) {
       ["Production / Day", `${u.production_per_day_kg} kg`],
     ],
     theme: "grid",
-    styles: { fontSize: 10, cellPadding: 5 },
-    headStyles: { fillColor: colors.accent, textColor: 255 },
-    margin: { left: 40, right: 40 },
-  });
-  cursor = (doc as any).lastAutoTable.finalY + 30;
-
-  // Commercial
-  addPage();
-  cursor = 90;
-  doc.setTextColor(...colors.primary);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Commercial Quotation", 40, cursor);
-  cursor += 20;
-  autoTable(doc, {
-    startY: cursor,
-    head: [["#", "Machine", "Qty", "Unit Price", "Amount"]],
-    body: p.machines.map((m, i) => [
-      i + 1,
-      m.name,
-      m.qty,
-      formatMoney(m.unit_price, p.currency),
-      formatMoney(m.unit_price * m.qty, p.currency),
-    ]),
-    theme: "grid",
-    styles: { fontSize: 9, cellPadding: 5 },
-    headStyles: { fillColor: colors.primary, textColor: 255 },
-    margin: { left: 40, right: 40 },
-  });
-  cursor = (doc as any).lastAutoTable.finalY + 12;
-  const c = p.commercials;
-  autoTable(doc, {
-    startY: cursor,
-    body: [
-      ["Machines Total", formatMoney(c.machines_total, p.currency)],
-      ["Freight", formatMoney(c.freight, p.currency)],
-      ["Packing", formatMoney(c.packing, p.currency)],
-      ["Installation", formatMoney(c.installation, p.currency)],
-      ["Commissioning", formatMoney(c.commissioning, p.currency)],
-      [`Tax (${c.tax_rate}%)`, formatMoney(c.tax, p.currency)],
-      [{ content: "GRAND TOTAL", styles: { fontStyle: "bold", fillColor: colors.primary, textColor: 255 } }, { content: formatMoney(c.grand_total, p.currency), styles: { fontStyle: "bold", fillColor: colors.primary, textColor: 255 } }],
-    ],
-    theme: "plain",
-    styles: { fontSize: 10, cellPadding: 5, halign: "right" },
-    columnStyles: { 0: { halign: "left", cellWidth: 300 } },
-    margin: { left: 40, right: 40 },
+    styles: { fontSize: 10, cellPadding: 6, lineColor: BORDER_GREY, lineWidth: 0.5, textColor: BRAND_DARK },
+    headStyles: { fillColor: BRAND_RED, textColor: 255, fontStyle: "bold" },
+    columnStyles: { 0: { fontStyle: "bold", fillColor: SOFT_GREY, cellWidth: 220 } },
+    margin: { left: MARGIN, right: MARGIN },
   });
   cursor = (doc as any).lastAutoTable.finalY + 24;
 
-  section("Advantages", undefined, p.ai.advantages);
-  section("Safety Features", undefined, p.ai.safety_features);
-  section("Quality Assurance", p.ai.quality_assurance);
-  section("Installation & Commissioning", p.ai.installation);
-  section("Warranty", p.ai.warranty);
-  section("After Sales Support", p.ai.after_sales);
-  section("Why Rameshwar Steel Fab", p.ai.value_proposition);
-
-  section("Terms & Conditions", undefined, [
-    "Prices are Ex-Works unless mentioned otherwise.",
-    "Payment: 40% advance along with PO, 50% before dispatch, 10% after commissioning.",
-    "Delivery: 10-14 weeks from receipt of advance and technical clearance.",
-    "Validity of offer: 30 days from date of proposal.",
-    "Foundation, civil work, utilities up to battery limit are in customer scope.",
-    "Statutory taxes, duties and freight extra as applicable.",
-  ]);
-
-  // Header + footer across all content pages
-  const total = doc.getNumberOfPages();
-  for (let i = 2; i <= total; i++) {
-    doc.setPage(i);
-    drawFooter(i - 1);
+  // Feature blocks
+  if (p.ai.advantages?.length) {
+    cursor = ensureSpace(80, cursor);
+    sectionHeader(doc, "KEY ADVANTAGES", cursor);
+    cursor += 22;
+    cursor = bulletList(doc, p.ai.advantages, MARGIN, cursor, W - MARGIN * 2, H);
+  }
+  if (p.ai.safety_features?.length) {
+    cursor = ensureSpace(80, cursor);
+    sectionHeader(doc, "SAFETY FEATURES", cursor);
+    cursor += 22;
+    cursor = bulletList(doc, p.ai.safety_features, MARGIN, cursor, W - MARGIN * 2, H);
+  }
+  if (p.ai.quality_assurance) {
+    cursor = ensureSpace(80, cursor);
+    sectionHeader(doc, "QUALITY ASSURANCE", cursor);
+    cursor += 22;
+    cursor = paragraph(doc, p.ai.quality_assurance, MARGIN, cursor, W - MARGIN * 2, H);
+  }
+  if (p.ai.installation) {
+    cursor = ensureSpace(80, cursor);
+    sectionHeader(doc, "INSTALLATION & COMMISSIONING", cursor);
+    cursor += 22;
+    cursor = paragraph(doc, p.ai.installation, MARGIN, cursor, W - MARGIN * 2, H);
+  }
+  if (p.ai.warranty) {
+    cursor = ensureSpace(60, cursor);
+    sectionHeader(doc, "WARRANTY", cursor);
+    cursor += 22;
+    cursor = paragraph(doc, p.ai.warranty, MARGIN, cursor, W - MARGIN * 2, H);
+  }
+  if (p.ai.after_sales) {
+    cursor = ensureSpace(60, cursor);
+    sectionHeader(doc, "AFTER SALES SUPPORT", cursor);
+    cursor += 22;
+    cursor = paragraph(doc, p.ai.after_sales, MARGIN, cursor, W - MARGIN * 2, H);
+  }
+  if (p.ai.value_proposition) {
+    cursor = ensureSpace(60, cursor);
+    sectionHeader(doc, "WHY RAMESHWAR STEEL FAB", cursor);
+    cursor += 22;
+    cursor = paragraph(doc, p.ai.value_proposition, MARGIN, cursor, W - MARGIN * 2, H);
   }
 
   doc.save(`${p.proposal_number.replace(/\//g, "_")}.pdf`);
+}
+
+function drawLabelValue(doc: jsPDF, label: string, value: string, x: number, y: number) {
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BRAND_DARK);
+  doc.text(label, x, y);
+  const lw = doc.getTextWidth(label);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(60);
+  doc.text(" " + value, x + lw, y);
+}
+
+function sectionHeader(doc: jsPDF, title: string, y: number) {
+  const W = doc.internal.pageSize.getWidth();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(...BRAND_DARK);
+  doc.text(spaced(title, " "), 40, y);
+  doc.setDrawColor(...BRAND_RED);
+  doc.setLineWidth(2);
+  doc.line(40, y + 6, 90, y + 6);
+  doc.setDrawColor(...BORDER_GREY);
+  doc.setLineWidth(0.5);
+  doc.line(92, y + 6, W - 40, y + 6);
+}
+
+function paragraph(doc: jsPDF, text: string | undefined, x: number, y: number, maxW: number, H: number): number {
+  if (!text) return y;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...BRAND_DARK);
+  const lines = doc.splitTextToSize(text, maxW);
+  for (const ln of lines) {
+    if (y > H - 60) { doc.addPage(); y = 130; }
+    doc.text(ln, x, y);
+    y += 14;
+  }
+  return y + 6;
+}
+
+function bulletList(doc: jsPDF, items: string[], x: number, y: number, maxW: number, H: number): number {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...BRAND_DARK);
+  for (const item of items) {
+    const lines = doc.splitTextToSize(item, maxW - 16);
+    for (let i = 0; i < lines.length; i++) {
+      if (y > H - 60) { doc.addPage(); y = 130; }
+      if (i === 0) {
+        doc.setTextColor(...BRAND_RED);
+        doc.text("■", x, y);
+        doc.setTextColor(...BRAND_DARK);
+      }
+      doc.text(lines[i], x + 14, y);
+      y += 14;
+    }
+    y += 2;
+  }
+  return y + 6;
+}
+
+function validUntil(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  d.setDate(d.getDate() + 30);
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function currencySymbol(currency: string): string {
+  switch (currency) {
+    case "INR": return "₹";
+    case "USD": return "$";
+    case "EUR": return "€";
+    case "GBP": return "£";
+    default: return currency;
+  }
 }
