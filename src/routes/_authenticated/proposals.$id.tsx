@@ -114,6 +114,8 @@ function ProposalDetail() {
     commercials,
     ai,
     template: p.template,
+    quotation_type: (((p as any).quotation_type as "domestic" | "export") ?? "domestic"),
+    terms: termsClauses,
   };
 
   const downloadPdf = () => { generateProposalPdf(pdfInput); };
