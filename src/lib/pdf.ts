@@ -54,7 +54,7 @@ async function loadLogo(): Promise<string | null> {
 
 const spaced = (s: string, gap = " ") => s.split("").join(gap);
 
-export async function generateProposalPdf(p: ProposalPdfInput) {
+export async function buildProposalPdf(p: ProposalPdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -454,7 +454,18 @@ export async function generateProposalPdf(p: ProposalPdfInput) {
     cursor = paragraph(doc, p.ai.value_proposition, MARGIN, cursor, W - MARGIN * 2, H);
   }
 
-  doc.save(`${p.proposal_number.replace(/\//g, "_")}.pdf`);
+  return { doc, filename: `${p.proposal_number.replace(/\//g, "_")}.pdf` };
+}
+
+export async function generateProposalPdf(p: ProposalPdfInput) {
+  const { doc, filename } = await buildProposalPdf(p);
+  doc.save(filename);
+}
+
+export async function getProposalPdfBlobUrl(p: ProposalPdfInput): Promise<{ url: string; filename: string }> {
+  const { doc, filename } = await buildProposalPdf(p);
+  const blob = doc.output("blob");
+  return { url: URL.createObjectURL(blob), filename };
 }
 
 function drawLabelValue(doc: jsPDF, label: string, value: string, x: number, y: number) {
