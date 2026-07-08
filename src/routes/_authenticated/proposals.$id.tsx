@@ -75,24 +75,48 @@ function ProposalDetail() {
   const cust = (p as any).customers ?? {};
   const productLabel = PRODUCT_TYPES.find(x => x.value === p.product_type)?.label ?? p.product_type;
 
-  const downloadPdf = () => {
-    generateProposalPdf({
-      proposal_number: p.proposal_number,
-      title: p.title,
-      date: new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-      customer: cust,
-      product_label: productLabel,
-      capacity: p.capacity,
-      automation: p.automation,
-      material: p.material,
-      currency: p.currency,
-      machines,
-      utilities,
-      commercials,
-      ai,
-      template: p.template,
-    });
+  const pdfInput = {
+    proposal_number: p.proposal_number,
+    title: p.title,
+    date: new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+    customer: cust,
+    product_label: productLabel,
+    capacity: p.capacity,
+    automation: p.automation,
+    material: p.material,
+    currency: p.currency,
+    machines,
+    utilities,
+    commercials,
+    ai,
+    template: p.template,
   };
+
+  const downloadPdf = () => { generateProposalPdf(pdfInput); };
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const openPreview = async () => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    try {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const { url } = await getProposalPdfBlobUrl(pdfInput);
+      setPreviewUrl(url);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to generate preview");
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
