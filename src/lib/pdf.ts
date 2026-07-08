@@ -143,7 +143,7 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
     doc.line(MARGIN, HEADER_BOTTOM - 4, W - MARGIN, HEADER_BOTTOM - 4);
   };
 
-  const drawFooter = () => {
+  const drawFooter = (pageNum: number, totalPages: number) => {
     doc.setFillColor(...BRAND_RED);
     doc.rect(0, H - FOOTER_TOP, W, FOOTER_TOP, "F");
     doc.setTextColor(255);
@@ -155,15 +155,13 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
       H - 13,
       { align: "center" },
     );
-    // page number
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    const n = (doc as any).internal.getNumberOfPages?.() ?? 1;
-    const cur = (doc as any).internal.getCurrentPageInfo?.().pageNumber ?? n;
-    doc.text(`Page ${cur} of ${n}`, W - MARGIN, H - 13, { align: "right" });
+    doc.text(`Page ${pageNum} of ${totalPages}`, W - MARGIN, H - 13, { align: "right" });
   };
 
-  const paintChrome = () => { drawHeader(); drawFooter(); };
+  // Header on every page; footer is finalised at the end so page counts are correct.
+  const paintChrome = () => { drawHeader(); };
 
   const newPage = () => {
     doc.addPage();
