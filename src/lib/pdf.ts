@@ -116,9 +116,9 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
     // Logo (aspect-preserved). Bound height at 46pt so it never crowds the header.
     if (logo) {
       try {
-        const h = 46;
+        const h = 54;
         const w = h * logo.ratio;
-        doc.addImage(logo.dataUrl, "PNG", MARGIN, 28, w, h, undefined, "FAST");
+        doc.addImage(logo.dataUrl, "PNG", MARGIN, 24, w, h, undefined, "FAST");
       } catch {
         /* fall through to text logo */
       }
