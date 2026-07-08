@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,7 +103,7 @@ function NewProposalWizard() {
   const [termsTemplateId, setTermsTemplateId] = useState<string>("");
 
   // Auto-infer mode from country once
-  useMemo(() => {
+  useEffect(() => {
     if (custCountry && !modeAutoSet) {
       setQuotationType(inferModeFromCountry(custCountry));
       setModeAutoSet(true);
@@ -111,7 +111,7 @@ function NewProposalWizard() {
   }, [custCountry, modeAutoSet]);
 
   // Auto-pick default template for chosen mode
-  useMemo(() => {
+  useEffect(() => {
     if (!templates.length) return;
     const scoped = templates.filter(t => t.scope === quotationType);
     if (!scoped.length) return;
