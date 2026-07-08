@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
 import { PRODUCT_TYPES, STATUSES, TEMPLATES } from "@/lib/proposal-catalog";
-import { generateProposalPdf } from "@/lib/pdf";
+import { generateProposalPdf, getProposalPdfBlobUrl } from "@/lib/pdf";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, ChevronLeft, Trash2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 
