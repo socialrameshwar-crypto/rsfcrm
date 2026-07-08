@@ -118,10 +118,6 @@ function ProposalDetail() {
 
   const downloadPdf = () => { generateProposalPdf(pdfInput); };
 
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-
   const openPreview = async () => {
     setPreviewOpen(true);
     setPreviewLoading(true);
@@ -136,11 +132,6 @@ function ProposalDetail() {
       setPreviewLoading(false);
     }
   };
-
-  useEffect(() => {
-    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
