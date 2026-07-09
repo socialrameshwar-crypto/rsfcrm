@@ -356,15 +356,41 @@ function NewProposalWizard() {
 
       {step === 3 && (
         <Card className="p-6 shadow-elegant space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div>
               <h2 className="font-semibold text-lg">AI Machine Configurator</h2>
               <p className="text-sm text-muted-foreground">Auto-generated based on {productLabel} · {capacity} · {automation} · {material}.</p>
             </div>
-            <Button variant="outline" onClick={() => setMachines([...defaultMachines, { name: "", qty: 1, capacity: "", motor: "", material, unit_price: 0 }])}>
-              <PlusCircle className="h-4 w-4 mr-1" /> Add machine
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select onValueChange={(cid) => {
+                const cat = libraryCategories.find(c => c.id === cid);
+                if (!cat) return;
+                fetchMachines(cid).then(rows => {
+                  if (!rows.length) { toast.info(`No machines in "${cat.name}" yet — add some in Products.`); return; }
+                  const mapped: Machine[] = rows.filter(r => !r.archived).map(r => ({
+                    name: r.name,
+                    qty: 1,
+                    capacity: r.capacity || "",
+                    motor: r.motor || "",
+                    material: r.material || material,
+                    unit_price: Number(r.customer_price || r.base_price || 0),
+                  }));
+                  setMachines([...(currentMachines || []), ...mapped]);
+                  toast.success(`Added ${mapped.length} machine${mapped.length === 1 ? "" : "s"} from "${cat.name}"`);
+                }).catch(e => toast.error(e.message));
+              }}>
+                <SelectTrigger className="w-56"><SelectValue placeholder="Load from product library…" /></SelectTrigger>
+                <SelectContent>
+                  {libraryCategories.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No categories yet — create some in Products.</div>}
+                  {libraryCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={() => setMachines([...currentMachines, { name: "", qty: 1, capacity: "", motor: "", material, unit_price: 0 }])}>
+                <PlusCircle className="h-4 w-4 mr-1" /> Add machine
+              </Button>
+            </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-muted-foreground border-b">
