@@ -26,11 +26,20 @@ import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsContentRouteImport } from './routes/_authenticated/settings.content'
 import { Route as AuthenticatedProposalsNewRouteImport } from './routes/_authenticated/proposals.new'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
+import { Route as AuthenticatedCrmToursIndexRouteImport } from './routes/_authenticated/crm/tours.index'
+import { Route as AuthenticatedCrmQuotationsIndexRouteImport } from './routes/_authenticated/crm/quotations.index'
 import { Route as AuthenticatedCrmProductsIndexRouteImport } from './routes/_authenticated/crm/products.index'
+import { Route as AuthenticatedCrmOrdersIndexRouteImport } from './routes/_authenticated/crm/orders.index'
 import { Route as AuthenticatedCrmLeadsIndexRouteImport } from './routes/_authenticated/crm/leads.index'
+import { Route as AuthenticatedCrmFollowupsIndexRouteImport } from './routes/_authenticated/crm/followups.index'
+import { Route as AuthenticatedCrmCompaniesIndexRouteImport } from './routes/_authenticated/crm/companies.index'
 import { Route as AuthenticatedProposalsIdEditRouteImport } from './routes/_authenticated/proposals.$id.edit'
+import { Route as AuthenticatedCrmQuotationsNewRouteImport } from './routes/_authenticated/crm/quotations.new'
+import { Route as AuthenticatedCrmQuotationsIdRouteImport } from './routes/_authenticated/crm/quotations.$id'
 import { Route as AuthenticatedCrmLeadsNewRouteImport } from './routes/_authenticated/crm/leads.new'
 import { Route as AuthenticatedCrmLeadsIdRouteImport } from './routes/_authenticated/crm/leads.$id'
+import { Route as AuthenticatedCrmCompaniesIdRouteImport } from './routes/_authenticated/crm/companies.$id'
+import { Route as AuthenticatedCrmAdminUsersRouteImport } from './routes/_authenticated/crm/admin.users'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -126,10 +135,28 @@ const AuthenticatedProposalsIdRoute =
     path: '/proposals/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrmToursIndexRoute =
+  AuthenticatedCrmToursIndexRouteImport.update({
+    id: '/tours/',
+    path: '/tours/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmQuotationsIndexRoute =
+  AuthenticatedCrmQuotationsIndexRouteImport.update({
+    id: '/quotations/',
+    path: '/quotations/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
 const AuthenticatedCrmProductsIndexRoute =
   AuthenticatedCrmProductsIndexRouteImport.update({
     id: '/products/',
     path: '/products/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmOrdersIndexRoute =
+  AuthenticatedCrmOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
     getParentRoute: () => AuthenticatedCrmRouteRoute,
   } as any)
 const AuthenticatedCrmLeadsIndexRoute =
@@ -138,11 +165,35 @@ const AuthenticatedCrmLeadsIndexRoute =
     path: '/leads/',
     getParentRoute: () => AuthenticatedCrmRouteRoute,
   } as any)
+const AuthenticatedCrmFollowupsIndexRoute =
+  AuthenticatedCrmFollowupsIndexRouteImport.update({
+    id: '/followups/',
+    path: '/followups/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmCompaniesIndexRoute =
+  AuthenticatedCrmCompaniesIndexRouteImport.update({
+    id: '/companies/',
+    path: '/companies/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
 const AuthenticatedProposalsIdEditRoute =
   AuthenticatedProposalsIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedProposalsIdRoute,
+  } as any)
+const AuthenticatedCrmQuotationsNewRoute =
+  AuthenticatedCrmQuotationsNewRouteImport.update({
+    id: '/quotations/new',
+    path: '/quotations/new',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmQuotationsIdRoute =
+  AuthenticatedCrmQuotationsIdRouteImport.update({
+    id: '/quotations/$id',
+    path: '/quotations/$id',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
   } as any)
 const AuthenticatedCrmLeadsNewRoute =
   AuthenticatedCrmLeadsNewRouteImport.update({
@@ -155,6 +206,18 @@ const AuthenticatedCrmLeadsIdRoute = AuthenticatedCrmLeadsIdRouteImport.update({
   path: '/leads/$id',
   getParentRoute: () => AuthenticatedCrmRouteRoute,
 } as any)
+const AuthenticatedCrmCompaniesIdRoute =
+  AuthenticatedCrmCompaniesIdRouteImport.update({
+    id: '/companies/$id',
+    path: '/companies/$id',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmAdminUsersRoute =
+  AuthenticatedCrmAdminUsersRouteImport.update({
+    id: '/admin/users',
+    path: '/admin/users',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,11 +236,20 @@ export interface FileRoutesByFullPath {
   '/crm/': typeof AuthenticatedCrmIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/templates/': typeof AuthenticatedTemplatesIndexRoute
+  '/crm/admin/users': typeof AuthenticatedCrmAdminUsersRoute
+  '/crm/companies/$id': typeof AuthenticatedCrmCompaniesIdRoute
   '/crm/leads/$id': typeof AuthenticatedCrmLeadsIdRoute
   '/crm/leads/new': typeof AuthenticatedCrmLeadsNewRoute
+  '/crm/quotations/$id': typeof AuthenticatedCrmQuotationsIdRoute
+  '/crm/quotations/new': typeof AuthenticatedCrmQuotationsNewRoute
   '/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
+  '/crm/companies/': typeof AuthenticatedCrmCompaniesIndexRoute
+  '/crm/followups/': typeof AuthenticatedCrmFollowupsIndexRoute
   '/crm/leads/': typeof AuthenticatedCrmLeadsIndexRoute
+  '/crm/orders/': typeof AuthenticatedCrmOrdersIndexRoute
   '/crm/products/': typeof AuthenticatedCrmProductsIndexRoute
+  '/crm/quotations/': typeof AuthenticatedCrmQuotationsIndexRoute
+  '/crm/tours/': typeof AuthenticatedCrmToursIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,11 +267,20 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/templates': typeof AuthenticatedTemplatesIndexRoute
+  '/crm/admin/users': typeof AuthenticatedCrmAdminUsersRoute
+  '/crm/companies/$id': typeof AuthenticatedCrmCompaniesIdRoute
   '/crm/leads/$id': typeof AuthenticatedCrmLeadsIdRoute
   '/crm/leads/new': typeof AuthenticatedCrmLeadsNewRoute
+  '/crm/quotations/$id': typeof AuthenticatedCrmQuotationsIdRoute
+  '/crm/quotations/new': typeof AuthenticatedCrmQuotationsNewRoute
   '/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
+  '/crm/companies': typeof AuthenticatedCrmCompaniesIndexRoute
+  '/crm/followups': typeof AuthenticatedCrmFollowupsIndexRoute
   '/crm/leads': typeof AuthenticatedCrmLeadsIndexRoute
+  '/crm/orders': typeof AuthenticatedCrmOrdersIndexRoute
   '/crm/products': typeof AuthenticatedCrmProductsIndexRoute
+  '/crm/quotations': typeof AuthenticatedCrmQuotationsIndexRoute
+  '/crm/tours': typeof AuthenticatedCrmToursIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,11 +301,20 @@ export interface FileRoutesById {
   '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/templates/': typeof AuthenticatedTemplatesIndexRoute
+  '/_authenticated/crm/admin/users': typeof AuthenticatedCrmAdminUsersRoute
+  '/_authenticated/crm/companies/$id': typeof AuthenticatedCrmCompaniesIdRoute
   '/_authenticated/crm/leads/$id': typeof AuthenticatedCrmLeadsIdRoute
   '/_authenticated/crm/leads/new': typeof AuthenticatedCrmLeadsNewRoute
+  '/_authenticated/crm/quotations/$id': typeof AuthenticatedCrmQuotationsIdRoute
+  '/_authenticated/crm/quotations/new': typeof AuthenticatedCrmQuotationsNewRoute
   '/_authenticated/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
+  '/_authenticated/crm/companies/': typeof AuthenticatedCrmCompaniesIndexRoute
+  '/_authenticated/crm/followups/': typeof AuthenticatedCrmFollowupsIndexRoute
   '/_authenticated/crm/leads/': typeof AuthenticatedCrmLeadsIndexRoute
+  '/_authenticated/crm/orders/': typeof AuthenticatedCrmOrdersIndexRoute
   '/_authenticated/crm/products/': typeof AuthenticatedCrmProductsIndexRoute
+  '/_authenticated/crm/quotations/': typeof AuthenticatedCrmQuotationsIndexRoute
+  '/_authenticated/crm/tours/': typeof AuthenticatedCrmToursIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -245,11 +335,20 @@ export interface FileRouteTypes {
     | '/crm/'
     | '/proposals/'
     | '/templates/'
+    | '/crm/admin/users'
+    | '/crm/companies/$id'
     | '/crm/leads/$id'
     | '/crm/leads/new'
+    | '/crm/quotations/$id'
+    | '/crm/quotations/new'
     | '/proposals/$id/edit'
+    | '/crm/companies/'
+    | '/crm/followups/'
     | '/crm/leads/'
+    | '/crm/orders/'
     | '/crm/products/'
+    | '/crm/quotations/'
+    | '/crm/tours/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -267,11 +366,20 @@ export interface FileRouteTypes {
     | '/crm'
     | '/proposals'
     | '/templates'
+    | '/crm/admin/users'
+    | '/crm/companies/$id'
     | '/crm/leads/$id'
     | '/crm/leads/new'
+    | '/crm/quotations/$id'
+    | '/crm/quotations/new'
     | '/proposals/$id/edit'
+    | '/crm/companies'
+    | '/crm/followups'
     | '/crm/leads'
+    | '/crm/orders'
     | '/crm/products'
+    | '/crm/quotations'
+    | '/crm/tours'
   id:
     | '__root__'
     | '/'
@@ -291,11 +399,20 @@ export interface FileRouteTypes {
     | '/_authenticated/crm/'
     | '/_authenticated/proposals/'
     | '/_authenticated/templates/'
+    | '/_authenticated/crm/admin/users'
+    | '/_authenticated/crm/companies/$id'
     | '/_authenticated/crm/leads/$id'
     | '/_authenticated/crm/leads/new'
+    | '/_authenticated/crm/quotations/$id'
+    | '/_authenticated/crm/quotations/new'
     | '/_authenticated/proposals/$id/edit'
+    | '/_authenticated/crm/companies/'
+    | '/_authenticated/crm/followups/'
     | '/_authenticated/crm/leads/'
+    | '/_authenticated/crm/orders/'
     | '/_authenticated/crm/products/'
+    | '/_authenticated/crm/quotations/'
+    | '/_authenticated/crm/tours/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -425,11 +542,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/tours/': {
+      id: '/_authenticated/crm/tours/'
+      path: '/tours'
+      fullPath: '/crm/tours/'
+      preLoaderRoute: typeof AuthenticatedCrmToursIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/quotations/': {
+      id: '/_authenticated/crm/quotations/'
+      path: '/quotations'
+      fullPath: '/crm/quotations/'
+      preLoaderRoute: typeof AuthenticatedCrmQuotationsIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
     '/_authenticated/crm/products/': {
       id: '/_authenticated/crm/products/'
       path: '/products'
       fullPath: '/crm/products/'
       preLoaderRoute: typeof AuthenticatedCrmProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/orders/': {
+      id: '/_authenticated/crm/orders/'
+      path: '/orders'
+      fullPath: '/crm/orders/'
+      preLoaderRoute: typeof AuthenticatedCrmOrdersIndexRouteImport
       parentRoute: typeof AuthenticatedCrmRouteRoute
     }
     '/_authenticated/crm/leads/': {
@@ -439,12 +577,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmLeadsIndexRouteImport
       parentRoute: typeof AuthenticatedCrmRouteRoute
     }
+    '/_authenticated/crm/followups/': {
+      id: '/_authenticated/crm/followups/'
+      path: '/followups'
+      fullPath: '/crm/followups/'
+      preLoaderRoute: typeof AuthenticatedCrmFollowupsIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/companies/': {
+      id: '/_authenticated/crm/companies/'
+      path: '/companies'
+      fullPath: '/crm/companies/'
+      preLoaderRoute: typeof AuthenticatedCrmCompaniesIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
     '/_authenticated/proposals/$id/edit': {
       id: '/_authenticated/proposals/$id/edit'
       path: '/edit'
       fullPath: '/proposals/$id/edit'
       preLoaderRoute: typeof AuthenticatedProposalsIdEditRouteImport
       parentRoute: typeof AuthenticatedProposalsIdRoute
+    }
+    '/_authenticated/crm/quotations/new': {
+      id: '/_authenticated/crm/quotations/new'
+      path: '/quotations/new'
+      fullPath: '/crm/quotations/new'
+      preLoaderRoute: typeof AuthenticatedCrmQuotationsNewRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/quotations/$id': {
+      id: '/_authenticated/crm/quotations/$id'
+      path: '/quotations/$id'
+      fullPath: '/crm/quotations/$id'
+      preLoaderRoute: typeof AuthenticatedCrmQuotationsIdRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
     }
     '/_authenticated/crm/leads/new': {
       id: '/_authenticated/crm/leads/new'
@@ -460,23 +626,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmLeadsIdRouteImport
       parentRoute: typeof AuthenticatedCrmRouteRoute
     }
+    '/_authenticated/crm/companies/$id': {
+      id: '/_authenticated/crm/companies/$id'
+      path: '/companies/$id'
+      fullPath: '/crm/companies/$id'
+      preLoaderRoute: typeof AuthenticatedCrmCompaniesIdRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/admin/users': {
+      id: '/_authenticated/crm/admin/users'
+      path: '/admin/users'
+      fullPath: '/crm/admin/users'
+      preLoaderRoute: typeof AuthenticatedCrmAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
   }
 }
 
 interface AuthenticatedCrmRouteRouteChildren {
   AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
+  AuthenticatedCrmAdminUsersRoute: typeof AuthenticatedCrmAdminUsersRoute
+  AuthenticatedCrmCompaniesIdRoute: typeof AuthenticatedCrmCompaniesIdRoute
   AuthenticatedCrmLeadsIdRoute: typeof AuthenticatedCrmLeadsIdRoute
   AuthenticatedCrmLeadsNewRoute: typeof AuthenticatedCrmLeadsNewRoute
+  AuthenticatedCrmQuotationsIdRoute: typeof AuthenticatedCrmQuotationsIdRoute
+  AuthenticatedCrmQuotationsNewRoute: typeof AuthenticatedCrmQuotationsNewRoute
+  AuthenticatedCrmCompaniesIndexRoute: typeof AuthenticatedCrmCompaniesIndexRoute
+  AuthenticatedCrmFollowupsIndexRoute: typeof AuthenticatedCrmFollowupsIndexRoute
   AuthenticatedCrmLeadsIndexRoute: typeof AuthenticatedCrmLeadsIndexRoute
+  AuthenticatedCrmOrdersIndexRoute: typeof AuthenticatedCrmOrdersIndexRoute
   AuthenticatedCrmProductsIndexRoute: typeof AuthenticatedCrmProductsIndexRoute
+  AuthenticatedCrmQuotationsIndexRoute: typeof AuthenticatedCrmQuotationsIndexRoute
+  AuthenticatedCrmToursIndexRoute: typeof AuthenticatedCrmToursIndexRoute
 }
 
 const AuthenticatedCrmRouteRouteChildren: AuthenticatedCrmRouteRouteChildren = {
   AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
+  AuthenticatedCrmAdminUsersRoute: AuthenticatedCrmAdminUsersRoute,
+  AuthenticatedCrmCompaniesIdRoute: AuthenticatedCrmCompaniesIdRoute,
   AuthenticatedCrmLeadsIdRoute: AuthenticatedCrmLeadsIdRoute,
   AuthenticatedCrmLeadsNewRoute: AuthenticatedCrmLeadsNewRoute,
+  AuthenticatedCrmQuotationsIdRoute: AuthenticatedCrmQuotationsIdRoute,
+  AuthenticatedCrmQuotationsNewRoute: AuthenticatedCrmQuotationsNewRoute,
+  AuthenticatedCrmCompaniesIndexRoute: AuthenticatedCrmCompaniesIndexRoute,
+  AuthenticatedCrmFollowupsIndexRoute: AuthenticatedCrmFollowupsIndexRoute,
   AuthenticatedCrmLeadsIndexRoute: AuthenticatedCrmLeadsIndexRoute,
+  AuthenticatedCrmOrdersIndexRoute: AuthenticatedCrmOrdersIndexRoute,
   AuthenticatedCrmProductsIndexRoute: AuthenticatedCrmProductsIndexRoute,
+  AuthenticatedCrmQuotationsIndexRoute: AuthenticatedCrmQuotationsIndexRoute,
+  AuthenticatedCrmToursIndexRoute: AuthenticatedCrmToursIndexRoute,
 }
 
 const AuthenticatedCrmRouteRouteWithChildren =
