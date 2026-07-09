@@ -129,6 +129,11 @@ function ProposalDetail() {
     quotation_type: (((p as any).quotation_type as "domestic" | "export") ?? "domestic"),
     terms: termsClauses,
     blocks: ((p as any).blocks as any[] | null) ?? undefined,
+    sales_engineer: {
+      name: (p as any).sales_engineer ?? null,
+      phone: (p as any).sales_engineer_phone ?? null,
+      email: (p as any).sales_engineer_email ?? null,
+    },
   };
 
   const buildBlobUrl = async (): Promise<{ url: string; filename: string }> => {
