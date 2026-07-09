@@ -355,7 +355,7 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
         const drawRowOn = (page: any, region: typeof li, r: Record<string, string>, rowY: number) => {
           const ph = page.getHeight();
           for (const col of region.columns) {
-            const text = r[col.key] ?? "";
+            const text = sanitizeWinAnsi(r[col.key] ?? "");
             if (!text) continue;
             const size = col.fontSize ?? 9;
             const font = helv;
