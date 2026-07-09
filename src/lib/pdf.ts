@@ -33,6 +33,7 @@ export interface ProposalPdfInput {
   quotation_type?: "domestic" | "export";
   terms?: ProposalTermsClause[];
   blocks?: ProposalBlock[];
+  sales_engineer?: { name?: string | null; phone?: string | null; email?: string | null } | null;
 }
 
 // Rameshwar Steel Fab brand palette (matches printed brochure)
@@ -417,6 +418,10 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
 
   // Signature + Bank
   const sigColW = (W - MARGIN * 2 - 20) / 2;
+  const se = p.sales_engineer || {};
+  const seName = (se.name && se.name.trim()) ? se.name.trim().toUpperCase() : "YAMINI MODI";
+  const sePhone = (se.phone && se.phone.trim()) ? se.phone.trim() : "+91 94099 49532";
+  const seEmail = se.email && se.email.trim() ? se.email.trim() : "";
   doc.setFont("helvetica", "italic");
   doc.setFontSize(10);
   doc.setTextColor(...TEXT_GREY);
@@ -424,14 +429,15 @@ export async function buildProposalPdf(p: ProposalPdfInput) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(...BRAND_DARK);
-  doc.text("YAMINI MODI", MARGIN, cursor + 20);
+  doc.text(fitLine(doc, seName, sigColW), MARGIN, cursor + 20);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(...BRAND_RED);
-  doc.text("Manager – Sales", MARGIN, cursor + 36);
+  doc.text("Sales Engineer", MARGIN, cursor + 36);
   doc.setTextColor(...BRAND_DARK);
   doc.text("RAMESHWAR STEEL FAB", MARGIN, cursor + 50);
-  doc.text("M: +91 94099 49532", MARGIN, cursor + 64);
+  doc.text(`M: ${sePhone}`, MARGIN, cursor + 64);
+  if (seEmail) doc.text(`E: ${seEmail}`, MARGIN, cursor + 78);
 
   // Bank details box
   const bx = MARGIN + sigColW + 20;
