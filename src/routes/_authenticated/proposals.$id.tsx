@@ -214,15 +214,15 @@ function ProposalDetail() {
             <p className="text-xs text-muted-foreground">{p.proposal_number} · Created {new Date(p.created_at).toLocaleDateString()}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => confirm("Delete this proposal?") && del.mutate()}>
-            <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => confirm("Delete this proposal?") && del.mutate()}>
+            <Trash2 className="h-4 w-4 sm:mr-1 text-destructive" /> <span className="hidden sm:inline">Delete</span>
           </Button>
-          <Button variant="outline" asChild><Link to="/proposals/$id/edit" params={{ id }}><LayoutTemplate className="h-4 w-4 mr-1" /> Editor</Link></Button>
+          <Button variant="outline" size="sm" asChild><Link to="/proposals/$id/edit" params={{ id }}><LayoutTemplate className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editor</span></Link></Button>
           <TemplateGenerateButton proposalId={id} currentTemplateId={(p as any).template_id ?? null} currentPath={(p as any).generated_pdf_path ?? null} />
-          <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
-          <Button variant="outline" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1" /> Email</Button>
-          <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
+          <Button variant="outline" size="sm" onClick={openPreview}><Eye className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Preview</span></Button>
+          <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Email</span></Button>
+          <Button size="sm" onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Download</span></Button>
         </div>
       </div>
 
