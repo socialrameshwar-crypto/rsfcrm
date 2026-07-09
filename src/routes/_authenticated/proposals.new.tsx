@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import {
   PRODUCT_TYPES, CAPACITIES, AUTOMATIONS, MATERIALS, CURRENCIES, TEMPLATES,
-  buildMachineList, calcUtilities, calcCommercials, generateProposalNumber,
+  buildMachineList, calcCommercials, generateProposalNumber,
   type ProductType, type Machine,
 } from "@/lib/proposal-catalog";
 import { formatMoney } from "@/lib/format";
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Sparkles, Check, Users, Cog, Zap, DollarSign, ChevronLeft, ChevronRight, PlusCircle, AlertCircle } from "lucide-react";
 import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type QuotationType } from "@/lib/terms";
 import { fetchCategories, fetchMachines } from "@/lib/products";
+import { fetchRules, fetchFormulas, pickBestRule, ruleToMachines, buildFormulaContext, evalFormula } from "@/lib/rules";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
@@ -68,11 +69,30 @@ function NewProposalWizard() {
   const [machines, setMachines] = useState<Machine[]>([]);
   const currentMachines = machines.length ? machines : defaultMachines;
 
-  // Step 4
-  const utilities = useMemo(
-    () => calcUtilities(product, capacity, automation, currentMachines),
-    [product, capacity, automation, currentMachines],
-  );
+  // Step 4 - utility formulas + editable overrides
+  const { data: dbFormulas = [] } = useQuery({ queryKey: ["formulas"], queryFn: fetchFormulas });
+  const { data: dbRules = [] } = useQuery({ queryKey: ["rules"], queryFn: () => fetchRules() });
+  const [utilityOverrides, setUtilityOverrides] = useState<Record<string, number | string>>({});
+
+  const computedUtilities = useMemo(() => {
+    const ctx = buildFormulaContext(product, capacity, automation, currentMachines);
+    const scoped = dbFormulas.filter(f => !f.product_slug || f.product_slug === product);
+    // Prefer product-specific over global (keep last-defined by key)
+    const byKey = new Map<string, typeof scoped[number]>();
+    for (const f of scoped) {
+      const prev = byKey.get(f.key);
+      if (!prev || (!prev.product_slug && f.product_slug)) byKey.set(f.key, f);
+    }
+    return Array.from(byKey.values())
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(f => ({ key: f.key, label: f.label, unit: f.unit || "", value: evalFormula(f.expression, ctx) }));
+  }, [dbFormulas, product, capacity, automation, currentMachines]);
+
+  const utilities = useMemo(() => {
+    const obj: Record<string, number | string> = {};
+    for (const u of computedUtilities) obj[u.key] = utilityOverrides[u.key] ?? u.value;
+    return obj;
+  }, [computedUtilities, utilityOverrides]);
 
   // Step 5
   const [taxRate, setTaxRate] = useState(18);
@@ -368,6 +388,21 @@ function NewProposalWizard() {
               <p className="text-sm text-muted-foreground">Auto-generated based on {productLabel} · {capacity} · {automation} · {material}.</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="default"
+                className="gradient-primary"
+                onClick={() => {
+                  const rule = pickBestRule(dbRules, { product, capacity, automation, material });
+                  if (!rule) {
+                    toast.info("No matching rule. Add one in Auto-Select & Formulas.");
+                    return;
+                  }
+                  setMachines(ruleToMachines(rule, material));
+                  toast.success(`Auto-selected via rule: ${rule.name}`);
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-1" /> Auto-select
+              </Button>
               <Select onValueChange={(cid) => {
                 const cat = libraryCategories.find(c => c.id === cid);
                 if (!cat) return;
@@ -438,29 +473,56 @@ function NewProposalWizard() {
 
       {step === 4 && (
         <Card className="p-6 shadow-elegant">
-          <h2 className="font-semibold text-lg mb-1">Utility Calculator</h2>
-          <p className="text-sm text-muted-foreground mb-4">Auto-computed from the selected machines and capacity.</p>
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+            <div>
+              <h2 className="font-semibold text-lg">Utility Calculator</h2>
+              <p className="text-sm text-muted-foreground">
+                Computed from your formulas. Values are editable — overrides are saved with this proposal.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {Object.keys(utilityOverrides).length > 0 && (
+                <Button variant="ghost" size="sm" onClick={() => setUtilityOverrides({})}>Reset overrides</Button>
+              )}
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/settings/rules">Edit formulas</Link>
+              </Button>
+            </div>
+          </div>
+          {computedUtilities.length === 0 && (
+            <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground text-center">
+              No utility formulas yet. Open <Link to="/settings/rules" className="underline">Auto-Select & Formulas</Link> and click "Load default formulas".
+            </div>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              ["Connected load", `${utilities.connected_load_kw} kW`],
-              ["Running load", `${utilities.running_load_kw} kW`],
-              ["Power / day", `${utilities.power_kwh_day} kWh`],
-              ["Water", `${utilities.water_kld} KL/day`],
-              ["Steam", `${utilities.steam_kg_hr} kg/hr`],
-              ["Air", `${utilities.air_cfm} CFM`],
-              ["Manpower", `${utilities.manpower} / shift`],
-              ["Floor space", `${utilities.floor_space_sqm} sqm`],
-              ["Production / shift", `${utilities.production_per_shift_kg} kg`],
-              ["Production / day", `${utilities.production_per_day_kg} kg`],
-            ].map(([k, v]) => (
-              <div key={k} className="rounded-lg border p-4 bg-secondary/30">
-                <div className="text-xs text-muted-foreground">{k}</div>
-                <div className="text-xl font-semibold mt-1">{v}</div>
-              </div>
-            ))}
+            {computedUtilities.map(u => {
+              const val = utilityOverrides[u.key] ?? u.value;
+              const overridden = u.key in utilityOverrides;
+              return (
+                <div key={u.key} className={`rounded-lg border p-3 ${overridden ? "bg-primary/5 border-primary/40" : "bg-secondary/30"}`}>
+                  <div className="text-xs text-muted-foreground flex items-center justify-between">
+                    <span>{u.label}</span>
+                    {overridden && <button onClick={() => setUtilityOverrides(o => { const n = { ...o }; delete n[u.key]; return n; })} className="text-[10px] text-primary hover:underline">reset</button>}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Input
+                      value={String(val)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        const num = Number(v);
+                        setUtilityOverrides(o => ({ ...o, [u.key]: isFinite(num) && v.trim() !== "" ? num : v }));
+                      }}
+                      className="text-lg font-semibold h-9 px-2"
+                    />
+                    {u.unit && <span className="text-xs text-muted-foreground shrink-0">{u.unit}</span>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
+
 
       {step === 5 && (
         <Card className="p-6 shadow-elegant space-y-6">
