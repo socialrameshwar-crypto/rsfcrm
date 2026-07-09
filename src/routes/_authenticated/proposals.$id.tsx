@@ -241,6 +241,35 @@ function ProposalDetail() {
         </div>
       </div>
 
+      {isPdfOverlay && linkedTemplate && (
+        <Card className="p-4 space-y-3 border-primary/40">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            <div className="font-semibold text-sm">Pixel-perfect template: {linkedTemplate.name}</div>
+            <Badge variant="secondary">{(linkedTemplate.overlays || []).length} fields</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            These values are stamped over the original PDF. Everything else in the PDF is
+            preserved exactly as designed.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(linkedTemplate.overlays || []).map(f => (
+              <div key={f.id}>
+                <label className="text-[10px] uppercase text-muted-foreground">{f.label} <span className="font-mono normal-case">{`{{${f.token}}}`}</span> · p{f.page}</label>
+                <Input
+                  defaultValue={overlayValues[f.token] ?? f.defaultValue ?? ""}
+                  onBlur={e => {
+                    const next = { ...overlayValues, [f.token]: e.target.value };
+                    patch.mutate({ overlay_values: next as any });
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+
       {/* Preview modal */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col gap-0">
