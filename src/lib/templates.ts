@@ -89,13 +89,30 @@ export async function updateTemplate(id: string, patch: Partial<Template>): Prom
   const p: any = {};
   for (const k of [
     "name", "description", "category", "tags", "blocks", "ai_content",
-    "thumbnail_url", "archived", "scope", "mode",
+    "thumbnail_url", "archived", "scope", "mode", "is_default",
     "source_pdf_url", "source_pdf_pages", "overlays",
   ] as const) {
     if ((patch as any)[k] !== undefined) p[k] = (patch as any)[k];
   }
   if (p.category !== undefined && patch.scope === undefined) p.scope = p.category;
   const { error } = await (supabase as any).from("proposal_templates").update(p).eq("id", id);
+  if (error) throw error;
+}
+
+/** Mark one template as the default and unset any other default (per user). */
+export async function setDefaultTemplate(id: string): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) throw new Error("Not signed in");
+  const { error: clearErr } = await (supabase as any)
+    .from("proposal_templates")
+    .update({ is_default: false })
+    .eq("user_id", userData.user.id)
+    .eq("is_default", true);
+  if (clearErr) throw clearErr;
+  const { error } = await (supabase as any)
+    .from("proposal_templates")
+    .update({ is_default: true })
+    .eq("id", id);
   if (error) throw error;
 }
 
