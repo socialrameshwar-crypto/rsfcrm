@@ -33,6 +33,7 @@ export interface ProposalPdfInput {
   quotation_type?: "domestic" | "export";
   terms?: ProposalTermsClause[];
   blocks?: ProposalBlock[];
+  sales_engineer?: { name?: string | null; phone?: string | null; email?: string | null } | null;
 }
 
 // Rameshwar Steel Fab brand palette (matches printed brochure)
