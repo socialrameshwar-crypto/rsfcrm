@@ -51,7 +51,19 @@ function NewProposalWizard() {
     country: "", city: "", industry: "",
   });
   const [salesEngineer, setSalesEngineer] = useState("");
+  const [salesEngineerPhone, setSalesEngineerPhone] = useState("");
+  const [salesEngineerEmail, setSalesEngineerEmail] = useState("");
   const [followUp, setFollowUp] = useState("");
+
+  // Auto-fill sales engineer from signed-in user
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      setSalesEngineer(prev => prev || (u.user!.user_metadata as any)?.full_name || u.user!.email?.split("@")[0] || "");
+      setSalesEngineerEmail(prev => prev || u.user!.email || "");
+    })();
+  }, []);
 
   // Step 2
   const [product, setProduct] = useState<ProductType>("toilet-soap");
