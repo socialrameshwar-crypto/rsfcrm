@@ -19,8 +19,6 @@ import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { EmailComposer } from "@/components/EmailComposer";
 import { ContentBlockPicker } from "@/components/ContentBlockPicker";
 import { AI_SECTIONS, fetchProposalTemplates } from "@/lib/content";
-import { getTemplate } from "@/lib/templates";
-import { fetchTemplatePdfBytes, stampPdfOverlay, pdfBytesToBlobUrl } from "@/lib/pdf-overlay";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   component: ProposalDetail,
