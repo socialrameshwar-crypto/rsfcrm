@@ -23,7 +23,7 @@ import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type Quot
 import { fetchCategories, fetchMachines } from "@/lib/products";
 import { fetchRules, fetchFormulas, pickBestRule, ruleToMachines, buildFormulaContext, evalFormula } from "@/lib/rules";
 import { Link } from "@tanstack/react-router";
-import { fetchTemplates } from "@/lib/templates";
+import { fetchTemplates as fetchProposalTemplates } from "@/lib/templates";
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
   component: NewProposalWizard,
