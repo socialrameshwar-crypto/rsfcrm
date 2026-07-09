@@ -461,31 +461,6 @@ function NewProposalWizard() {
                 <SelectContent>{TEMPLATES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2">
-              <Label>Start from template <span className="text-muted-foreground font-normal">(optional — uses layout, headings & default content from Template Manager)</span></Label>
-              <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger><SelectValue placeholder="Blank — no template" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Blank — no template</SelectItem>
-                  {proposalTemplates.map(t => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.mode === "pdf_overlay" ? "📄 " : ""}{t.name} · {t.category}
-                      {t.mode === "pdf_overlay" ? " · pixel-perfect" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedTemplate?.mode === "pdf_overlay" && (
-                <p className="text-[11px] text-primary mt-1">
-                  Pixel-perfect template — the proposal will render on the uploaded PDF layout with your values overlaid.
-                </p>
-              )}
-              {proposalTemplates.length === 0 && (
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  No templates yet. <Link to="/templates" className="text-primary underline">Create one in Template Manager</Link>.
-                </p>
-              )}
-            </div>
           </div>
         </Card>
       )}
