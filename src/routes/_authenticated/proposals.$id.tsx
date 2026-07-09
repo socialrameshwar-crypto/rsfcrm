@@ -351,7 +351,38 @@ function ProposalDetail() {
       <EditableMachineTable machines={machines} currency={p.currency} onSave={saveMachines} />
 
       <Card className="p-5 shadow-elegant">
-        <h3 className="font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Technical Proposal <span className="text-xs font-normal text-muted-foreground">— click any section to edit</span></h3>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+          <h3 className="font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Technical Proposal <span className="text-xs font-normal text-muted-foreground">— click any section to edit</span></h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            {pTemplates.length > 0 && (
+              <Select value="" onValueChange={applyTemplate}>
+                <SelectTrigger className="h-8 w-48"><SelectValue placeholder="Apply template…" /></SelectTrigger>
+                <SelectContent>
+                  {pTemplates.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name} <span className="text-muted-foreground">· {t.scope}</span></SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={targetSection} onValueChange={v => setTargetSection(v as keyof AiProposalContent)}>
+              <SelectTrigger className="h-8 w-52"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {AI_SECTIONS.map(s => <SelectItem key={s.key} value={s.key}>Target: {s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" onClick={() => setBlockPickerOpen(true)}>
+              <Blocks className="h-3.5 w-3.5 mr-1" /> Insert block
+            </Button>
+          </div>
+        </div>
+        <ContentBlockPicker
+          open={blockPickerOpen}
+          onOpenChange={setBlockPickerOpen}
+          productSlug={p.product_type}
+          targetLabel={AI_SECTIONS.find(s => s.key === targetSection)?.label}
+          onInsert={(b, mode) => insertBlock(b.body, mode)}
+        />
+
         <div className="space-y-5 text-sm leading-relaxed">
           <EditableSection title="Executive Summary" value={ai.executive_summary} onSave={v => saveAiField("executive_summary", v)} />
           <EditableSection title="Company Introduction" value={ai.company_introduction} onSave={v => saveAiField("company_introduction", v)} />
