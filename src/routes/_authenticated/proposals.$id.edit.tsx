@@ -179,32 +179,32 @@ function BlockEditor() {
   return (
     <div className="fixed inset-0 lg:left-64 top-16 bg-muted/30 flex flex-col">
       {/* Toolbar */}
-      <div className="h-12 border-b bg-background flex items-center gap-2 px-3">
-        <Button variant="ghost" size="sm" asChild><Link to="/proposals/$id" params={{ id }}><ChevronLeft className="h-4 w-4 mr-1" />Back</Link></Button>
-        <div className="text-sm font-semibold truncate">{p.title}</div>
-        <div className="mx-2 h-6 w-px bg-border" />
+      <div className="min-h-12 border-b bg-background flex flex-wrap items-center gap-2 px-2 sm:px-3 py-1.5">
+        <Button variant="ghost" size="sm" asChild><Link to="/proposals/$id" params={{ id }}><ChevronLeft className="h-4 w-4 mr-1" /><span className="hidden sm:inline">Back</span></Link></Button>
+        <div className="text-sm font-semibold truncate max-w-[45%] sm:max-w-none">{p.title}</div>
+        <div className="hidden sm:block mx-1 h-6 w-px bg-border" />
         <Button variant="ghost" size="sm" onClick={undo} disabled={!historyRef.current.length}><Undo2 className="h-4 w-4" /></Button>
         <Button variant="ghost" size="sm" onClick={redo} disabled={!futureRef.current.length}><Redo2 className="h-4 w-4" /></Button>
-        <div className="mx-2 h-6 w-px bg-border" />
+        <div className="hidden sm:block mx-1 h-6 w-px bg-border" />
         <div className="flex items-center gap-1 rounded-md border p-0.5">
-          <Button variant={device === "a4" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("a4")}><A4Icon className="h-3.5 w-3.5 mr-1" />A4</Button>
-          <Button variant={device === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("desktop")}><Monitor className="h-3.5 w-3.5 mr-1" />Desktop</Button>
-          <Button variant={device === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("mobile")}><Smartphone className="h-3.5 w-3.5 mr-1" />Mobile</Button>
+          <Button variant={device === "a4" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("a4")}><A4Icon className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">A4</span></Button>
+          <Button variant={device === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("desktop")}><Monitor className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Desktop</span></Button>
+          <Button variant={device === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("mobile")}><Smartphone className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Mobile</span></Button>
         </div>
-        <div className="mx-2 h-6 w-px bg-border" />
+        <div className="hidden sm:block mx-1 h-6 w-px bg-border" />
         <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-          <Sparkles className="h-3.5 w-3.5 mr-1" /> Import template
+          <Sparkles className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Import template</span>
         </Button>
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          {saving ? <>Saving…</> : saved ? <><Check className="h-3.5 w-3.5 text-success" /> Saved</> : <>Unsaved</>}
+          {saving ? <>Saving…</> : saved ? <><Check className="h-3.5 w-3.5 text-success" /> <span className="hidden sm:inline">Saved</span></> : <span className="hidden sm:inline">Unsaved</span>}
           <Button size="sm" onClick={() => patch.mutate({ blocks, ai })} disabled={saved || saving} className="gradient-primary">
-            <Save className="h-3.5 w-3.5 mr-1" /> Save now
+            <Save className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Save now</span>
           </Button>
         </div>
       </div>
 
       {/* Body */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[280px_1fr_320px] min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] xl:grid-cols-[280px_1fr_320px] min-h-0 overflow-y-auto lg:overflow-hidden">
         {/* Left: outline */}
         <div className="border-r bg-background overflow-y-auto min-h-0">
           <div className="p-3 border-b">
