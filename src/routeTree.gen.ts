@@ -17,6 +17,7 @@ import { Route as AuthenticatedCustomersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCrmRouteRouteImport } from './routes/_authenticated/crm/route'
 import { Route as AuthenticatedTemplatesIndexRouteImport } from './routes/_authenticated/templates.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
+import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm/index'
 import { Route as AuthenticatedTemplatesNewRouteImport } from './routes/_authenticated/templates.new'
 import { Route as AuthenticatedTemplatesIdRouteImport } from './routes/_authenticated/templates.$id'
 import { Route as AuthenticatedSettingsTermsRouteImport } from './routes/_authenticated/settings.terms'
@@ -25,7 +26,11 @@ import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsContentRouteImport } from './routes/_authenticated/settings.content'
 import { Route as AuthenticatedProposalsNewRouteImport } from './routes/_authenticated/proposals.new'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
+import { Route as AuthenticatedCrmProductsIndexRouteImport } from './routes/_authenticated/crm/products.index'
+import { Route as AuthenticatedCrmLeadsIndexRouteImport } from './routes/_authenticated/crm/leads.index'
 import { Route as AuthenticatedProposalsIdEditRouteImport } from './routes/_authenticated/proposals.$id.edit'
+import { Route as AuthenticatedCrmLeadsNewRouteImport } from './routes/_authenticated/crm/leads.new'
+import { Route as AuthenticatedCrmLeadsIdRouteImport } from './routes/_authenticated/crm/leads.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -68,6 +73,11 @@ const AuthenticatedProposalsIndexRoute =
     path: '/proposals/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCrmRouteRoute,
+} as any)
 const AuthenticatedTemplatesNewRoute =
   AuthenticatedTemplatesNewRouteImport.update({
     id: '/templates/new',
@@ -116,17 +126,40 @@ const AuthenticatedProposalsIdRoute =
     path: '/proposals/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrmProductsIndexRoute =
+  AuthenticatedCrmProductsIndexRouteImport.update({
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmLeadsIndexRoute =
+  AuthenticatedCrmLeadsIndexRouteImport.update({
+    id: '/leads/',
+    path: '/leads/',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
 const AuthenticatedProposalsIdEditRoute =
   AuthenticatedProposalsIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedProposalsIdRoute,
   } as any)
+const AuthenticatedCrmLeadsNewRoute =
+  AuthenticatedCrmLeadsNewRouteImport.update({
+    id: '/leads/new',
+    path: '/leads/new',
+    getParentRoute: () => AuthenticatedCrmRouteRoute,
+  } as any)
+const AuthenticatedCrmLeadsIdRoute = AuthenticatedCrmLeadsIdRouteImport.update({
+  id: '/leads/$id',
+  path: '/leads/$id',
+  getParentRoute: () => AuthenticatedCrmRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/crm': typeof AuthenticatedCrmRouteRoute
+  '/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRouteWithChildren
@@ -137,14 +170,18 @@ export interface FileRoutesByFullPath {
   '/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/templates/$id': typeof AuthenticatedTemplatesIdRoute
   '/templates/new': typeof AuthenticatedTemplatesNewRoute
+  '/crm/': typeof AuthenticatedCrmIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/templates/': typeof AuthenticatedTemplatesIndexRoute
+  '/crm/leads/$id': typeof AuthenticatedCrmLeadsIdRoute
+  '/crm/leads/new': typeof AuthenticatedCrmLeadsNewRoute
   '/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
+  '/crm/leads/': typeof AuthenticatedCrmLeadsIndexRoute
+  '/crm/products/': typeof AuthenticatedCrmProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/crm': typeof AuthenticatedCrmRouteRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRouteWithChildren
@@ -155,16 +192,21 @@ export interface FileRoutesByTo {
   '/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/templates/$id': typeof AuthenticatedTemplatesIdRoute
   '/templates/new': typeof AuthenticatedTemplatesNewRoute
+  '/crm': typeof AuthenticatedCrmIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/templates': typeof AuthenticatedTemplatesIndexRoute
+  '/crm/leads/$id': typeof AuthenticatedCrmLeadsIdRoute
+  '/crm/leads/new': typeof AuthenticatedCrmLeadsNewRoute
   '/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
+  '/crm/leads': typeof AuthenticatedCrmLeadsIndexRoute
+  '/crm/products': typeof AuthenticatedCrmProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/crm': typeof AuthenticatedCrmRouteRoute
+  '/_authenticated/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRouteWithChildren
@@ -175,9 +217,14 @@ export interface FileRoutesById {
   '/_authenticated/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/_authenticated/templates/$id': typeof AuthenticatedTemplatesIdRoute
   '/_authenticated/templates/new': typeof AuthenticatedTemplatesNewRoute
+  '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/templates/': typeof AuthenticatedTemplatesIndexRoute
+  '/_authenticated/crm/leads/$id': typeof AuthenticatedCrmLeadsIdRoute
+  '/_authenticated/crm/leads/new': typeof AuthenticatedCrmLeadsNewRoute
   '/_authenticated/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
+  '/_authenticated/crm/leads/': typeof AuthenticatedCrmLeadsIndexRoute
+  '/_authenticated/crm/products/': typeof AuthenticatedCrmProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -195,14 +242,18 @@ export interface FileRouteTypes {
     | '/settings/terms'
     | '/templates/$id'
     | '/templates/new'
+    | '/crm/'
     | '/proposals/'
     | '/templates/'
+    | '/crm/leads/$id'
+    | '/crm/leads/new'
     | '/proposals/$id/edit'
+    | '/crm/leads/'
+    | '/crm/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
-    | '/crm'
     | '/customers'
     | '/dashboard'
     | '/proposals/$id'
@@ -213,9 +264,14 @@ export interface FileRouteTypes {
     | '/settings/terms'
     | '/templates/$id'
     | '/templates/new'
+    | '/crm'
     | '/proposals'
     | '/templates'
+    | '/crm/leads/$id'
+    | '/crm/leads/new'
     | '/proposals/$id/edit'
+    | '/crm/leads'
+    | '/crm/products'
   id:
     | '__root__'
     | '/'
@@ -232,9 +288,14 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/terms'
     | '/_authenticated/templates/$id'
     | '/_authenticated/templates/new'
+    | '/_authenticated/crm/'
     | '/_authenticated/proposals/'
     | '/_authenticated/templates/'
+    | '/_authenticated/crm/leads/$id'
+    | '/_authenticated/crm/leads/new'
     | '/_authenticated/proposals/$id/edit'
+    | '/_authenticated/crm/leads/'
+    | '/_authenticated/crm/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/': {
+      id: '/_authenticated/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
     '/_authenticated/templates/new': {
       id: '/_authenticated/templates/new'
       path: '/templates/new'
@@ -357,6 +425,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/products/': {
+      id: '/_authenticated/crm/products/'
+      path: '/products'
+      fullPath: '/crm/products/'
+      preLoaderRoute: typeof AuthenticatedCrmProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/leads/': {
+      id: '/_authenticated/crm/leads/'
+      path: '/leads'
+      fullPath: '/crm/leads/'
+      preLoaderRoute: typeof AuthenticatedCrmLeadsIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
     '/_authenticated/proposals/$id/edit': {
       id: '/_authenticated/proposals/$id/edit'
       path: '/edit'
@@ -364,8 +446,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProposalsIdEditRouteImport
       parentRoute: typeof AuthenticatedProposalsIdRoute
     }
+    '/_authenticated/crm/leads/new': {
+      id: '/_authenticated/crm/leads/new'
+      path: '/leads/new'
+      fullPath: '/crm/leads/new'
+      preLoaderRoute: typeof AuthenticatedCrmLeadsNewRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/leads/$id': {
+      id: '/_authenticated/crm/leads/$id'
+      path: '/leads/$id'
+      fullPath: '/crm/leads/$id'
+      preLoaderRoute: typeof AuthenticatedCrmLeadsIdRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
   }
 }
+
+interface AuthenticatedCrmRouteRouteChildren {
+  AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
+  AuthenticatedCrmLeadsIdRoute: typeof AuthenticatedCrmLeadsIdRoute
+  AuthenticatedCrmLeadsNewRoute: typeof AuthenticatedCrmLeadsNewRoute
+  AuthenticatedCrmLeadsIndexRoute: typeof AuthenticatedCrmLeadsIndexRoute
+  AuthenticatedCrmProductsIndexRoute: typeof AuthenticatedCrmProductsIndexRoute
+}
+
+const AuthenticatedCrmRouteRouteChildren: AuthenticatedCrmRouteRouteChildren = {
+  AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
+  AuthenticatedCrmLeadsIdRoute: AuthenticatedCrmLeadsIdRoute,
+  AuthenticatedCrmLeadsNewRoute: AuthenticatedCrmLeadsNewRoute,
+  AuthenticatedCrmLeadsIndexRoute: AuthenticatedCrmLeadsIndexRoute,
+  AuthenticatedCrmProductsIndexRoute: AuthenticatedCrmProductsIndexRoute,
+}
+
+const AuthenticatedCrmRouteRouteWithChildren =
+  AuthenticatedCrmRouteRoute._addFileChildren(
+    AuthenticatedCrmRouteRouteChildren,
+  )
 
 interface AuthenticatedProposalsIdRouteChildren {
   AuthenticatedProposalsIdEditRoute: typeof AuthenticatedProposalsIdEditRoute
@@ -382,7 +499,7 @@ const AuthenticatedProposalsIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedCrmRouteRoute: typeof AuthenticatedCrmRouteRoute
+  AuthenticatedCrmRouteRoute: typeof AuthenticatedCrmRouteRouteWithChildren
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRouteWithChildren
@@ -398,7 +515,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedCrmRouteRoute: AuthenticatedCrmRouteRoute,
+  AuthenticatedCrmRouteRoute: AuthenticatedCrmRouteRouteWithChildren,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProposalsIdRoute: AuthenticatedProposalsIdRouteWithChildren,
