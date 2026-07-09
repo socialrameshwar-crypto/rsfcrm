@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronUp, ChevronDown, Copy, Trash2, Eye, EyeOff, Plus,
-  Save, Undo2, Redo2, Monitor, Smartphone, FileText as A4Icon, Check,
+  Save, Undo2, Redo2, Monitor, Smartphone, FileText as A4Icon, Check, Sparkles,
 } from "lucide-react";
 import {
   defaultBlocks, makeBlock, BLOCK_LABEL, AI_SECTION_KEYS,
@@ -22,6 +22,7 @@ import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { BlockPreview } from "@/components/BlockPreview";
 import { PRODUCT_TYPES } from "@/lib/proposal-catalog";
+import { TemplateImportDialog } from "@/components/TemplateImportDialog";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id/edit")({
   component: BlockEditor,
