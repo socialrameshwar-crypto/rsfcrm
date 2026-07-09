@@ -150,11 +150,16 @@ function TemplateManager() {
                     <img src={t.thumbnail_url} alt={t.name} className="h-full w-full object-cover" />
                   ) : (
                     <div className="text-center px-4">
-                      <FileText className="h-10 w-10 mx-auto text-muted-foreground/70" />
+                      {t.mode === "pdf_overlay" ? <FileType className="h-10 w-10 mx-auto text-primary/70" /> : <FileText className="h-10 w-10 mx-auto text-muted-foreground/70" />}
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-2">
-                        {(t.blocks?.length ?? 0)} blocks
+                        {t.mode === "pdf_overlay"
+                          ? `${t.source_pdf_pages ?? 0} pages · ${(t.overlays?.length ?? 0)} fields`
+                          : `${(t.blocks?.length ?? 0)} blocks`}
                       </div>
                     </div>
+                  )}
+                  {t.mode === "pdf_overlay" && (
+                    <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px]">Pixel-perfect</Badge>
                   )}
                   {t.archived && <Badge variant="secondary" className="absolute top-2 left-2">Archived</Badge>}
                 </div>
