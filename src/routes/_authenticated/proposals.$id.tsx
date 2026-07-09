@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks, LayoutTemplate, FileText } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { generateProposalPdf } from "@/lib/templates.functions";
+import { listTemplates, type TemplateRow } from "@/lib/templates";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { EmailComposer } from "@/components/EmailComposer";
 import { ContentBlockPicker } from "@/components/ContentBlockPicker";
@@ -216,6 +219,7 @@ function ProposalDetail() {
             <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
           </Button>
           <Button variant="outline" asChild><Link to="/proposals/$id/edit" params={{ id }}><LayoutTemplate className="h-4 w-4 mr-1" /> Editor</Link></Button>
+          <TemplateGenerateButton proposalId={id} currentTemplateId={(p as any).template_id ?? null} currentPath={(p as any).generated_pdf_path ?? null} />
           <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
           <Button variant="outline" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1" /> Email</Button>
           <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
@@ -593,3 +597,87 @@ function EditableMachineTable({ machines, currency, onSave }: { machines: Machin
     </Card>
   );
 }
+
+function TemplateGenerateButton({ proposalId, currentTemplateId, currentPath }: {
+  proposalId: string; currentTemplateId: string | null; currentPath: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<string>(currentTemplateId ?? "");
+  const [busy, setBusy] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const gen = useServerFn(generateProposalPdf);
+  const { data: templates = [] } = useQuery<TemplateRow[]>({ queryKey: ["templates"], queryFn: listTemplates, enabled: open });
+
+  useEffect(() => {
+    if (!open || !currentPath) return;
+    supabase.storage.from("proposal-pdfs").createSignedUrl(currentPath, 3600).then(r => setUrl(r.data?.signedUrl ?? null));
+  }, [open, currentPath]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!selected && templates.length) {
+      const def = templates.find(t => t.is_default) ?? templates[0];
+      setSelected(def.id);
+    }
+  }, [open, templates, selected]);
+
+  const run = async () => {
+    if (!selected) { toast.error("Choose a template"); return; }
+    setBusy(true);
+    try {
+      const r = await gen({ data: { proposalId, templateId: selected } });
+      setUrl(r.url);
+      toast.success("PDF generated");
+    } catch (e: any) { toast.error(e.message ?? "Generation failed"); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <Sparkles className="h-4 w-4 mr-1" /> Generate PDF
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader><DialogTitle>Generate PDF from Template</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4">
+            <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+              {templates.length === 0 && (
+                <div className="text-sm text-muted-foreground p-3 border rounded">
+                  No templates yet. <Link to="/templates/new" className="text-primary underline">Import one</Link>.
+                </div>
+              )}
+              {templates.map(t => (
+                <button key={t.id} onClick={() => setSelected(t.id)}
+                  className={`w-full text-left border rounded-lg p-3 hover:bg-accent transition ${selected === t.id ? "border-primary ring-1 ring-primary" : ""}`}>
+                  <div className="font-medium text-sm truncate">{t.name}</div>
+                  <div className="text-xs text-muted-foreground">{t.source_pdf_pages ?? 0} pages · v{t.version ?? 1}</div>
+                  {t.is_default && <Badge className="mt-1 bg-primary text-xs">Default</Badge>}
+                </button>
+              ))}
+            </div>
+            <div className="min-h-[60vh] bg-muted rounded overflow-hidden">
+              {url ? (
+                <iframe src={url} className="w-full h-[70vh]" title="Generated PDF" />
+              ) : (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground p-6 text-center">
+                  {busy ? "Generating…" : "Choose a template, then click Generate to preview."}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Close</Button>
+            <Button onClick={run} disabled={busy || !selected} className="gradient-primary">
+              <Sparkles className="h-4 w-4 mr-1" /> {busy ? "Generating…" : "Generate"}
+            </Button>
+            {url && (
+              <Button asChild variant="outline"><a href={url} target="_blank" rel="noreferrer"><Download className="h-4 w-4 mr-1" /> Open</a></Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
