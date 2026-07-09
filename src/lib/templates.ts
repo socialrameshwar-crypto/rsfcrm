@@ -91,7 +91,7 @@ export async function createTemplateStub(name: string, category: string): Promis
       name,
       category,
       status: "draft",
-      mode: "domestic",
+      mode: "pdf_overlay",
       scope: "domestic",
     } as any)
     .select("*")
@@ -163,7 +163,7 @@ export async function duplicateTemplate(id: string): Promise<string> {
     description: src.description,
     is_default: false,
     status: src.status,
-    mode: "domestic", scope: "domestic",
+    mode: "pdf_overlay", scope: "domestic",
     source_pdf_url: src.source_pdf_url,
     source_pdf_pages: src.source_pdf_pages,
     thumbnail_url: src.thumbnail_url,
