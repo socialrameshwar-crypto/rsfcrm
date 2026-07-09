@@ -394,9 +394,28 @@ function ImportDialog({ open, onOpenChange, runImport, onCreated }: {
   const submit = async () => {
     if (!name.trim()) { toast.error("Give the template a name"); return; }
     if (!text.trim() && !file) { toast.error("Paste some text or upload a file"); return; }
-    if (file && file.size > MAX_FILE_BYTES) { toast.error("File must be under 10 MB"); return; }
+    if (file && file.size > 25 * 1024 * 1024) { toast.error("File must be under 25 MB"); return; }
     setBusy(true);
     try {
+      // Pixel-perfect path: PDFs are kept as-is so the output = the original.
+      if (file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name))) {
+        const uploaded = await uploadTemplatePdf(file);
+        const t = await createTemplate({
+          name: name.trim(),
+          category,
+          mode: "pdf_overlay",
+          source_pdf_url: uploaded.storagePath,
+          source_pdf_pages: uploaded.pages,
+          overlays: [],
+          description: `Pixel-perfect template from ${file.name} (${uploaded.pages} pages). Draw fields over the PDF to bind dynamic values.`,
+        });
+        toast.success("PDF imported pixel-perfect — output will match the source exactly.");
+        reset();
+        onCreated(t);
+        return;
+      }
+
+      if (file && file.size > MAX_FILE_BYTES) { toast.error("Non-PDF files must be under 10 MB"); setBusy(false); return; }
       const payload: any = { text: text || undefined };
       if (file) {
         const dataBase64 = await readFileBase64(file);
