@@ -132,7 +132,13 @@ function NewProposalWizard() {
     queryKey: ["templates", false],
     queryFn: () => fetchProposalTemplates(false),
   });
-  const selectedTemplate = proposalTemplates.find(t => t.id === templateId);
+  const defaultTemplate = proposalTemplates.find(t => t.is_default) ?? null;
+  const selectedTemplate =
+    templateChoice === "default"
+      ? defaultTemplate
+      : (proposalTemplates.find(t => t.id === templateId) ?? null);
+
+
 
 
   const [quotationType, setQuotationType] = useState<QuotationType>("domestic");
