@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { PRODUCT_TYPES, STATUSES, TEMPLATES } from "@/lib/proposal-catalog";
-import { generateProposalPdf, getProposalPdfBlobUrl } from "@/lib/pdf";
+import { getProposalPdfBlobUrl } from "@/lib/pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks, LayoutTemplate } from "lucide-react";
