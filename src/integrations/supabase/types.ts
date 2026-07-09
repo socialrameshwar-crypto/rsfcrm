@@ -310,11 +310,13 @@ export type Database = {
       proposal_templates: {
         Row: {
           ai_content: Json
+          analysis: Json
           archived: boolean
           blocks: Json
           category: string
           created_at: string
           description: string | null
+          field_overrides: Json
           id: string
           is_default: boolean
           mode: string
@@ -324,18 +326,22 @@ export type Database = {
           sections: Json
           source_pdf_pages: number | null
           source_pdf_url: string | null
+          status: string
           tags: string[]
           thumbnail_url: string | null
           updated_at: string
           user_id: string
+          version: number
         }
         Insert: {
           ai_content?: Json
+          analysis?: Json
           archived?: boolean
           blocks?: Json
           category?: string
           created_at?: string
           description?: string | null
+          field_overrides?: Json
           id?: string
           is_default?: boolean
           mode?: string
@@ -345,18 +351,22 @@ export type Database = {
           sections?: Json
           source_pdf_pages?: number | null
           source_pdf_url?: string | null
+          status?: string
           tags?: string[]
           thumbnail_url?: string | null
           updated_at?: string
           user_id: string
+          version?: number
         }
         Update: {
           ai_content?: Json
+          analysis?: Json
           archived?: boolean
           blocks?: Json
           category?: string
           created_at?: string
           description?: string | null
+          field_overrides?: Json
           id?: string
           is_default?: boolean
           mode?: string
@@ -366,10 +376,12 @@ export type Database = {
           sections?: Json
           source_pdf_pages?: number | null
           source_pdf_url?: string | null
+          status?: string
           tags?: string[]
           thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
+          version?: number
         }
         Relationships: []
       }
@@ -384,6 +396,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           follow_up_date: string | null
+          generated_pdf_path: string | null
           id: string
           machines: Json
           material: string
@@ -412,6 +425,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           follow_up_date?: string | null
+          generated_pdf_path?: string | null
           id?: string
           machines?: Json
           material: string
@@ -440,6 +454,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           follow_up_date?: string | null
+          generated_pdf_path?: string | null
           id?: string
           machines?: Json
           material?: string
