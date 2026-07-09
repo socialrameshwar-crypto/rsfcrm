@@ -879,6 +879,8 @@ export type Database = {
           proposal_number: string
           quotation_type: string
           sales_engineer: string | null
+          sales_engineer_email: string | null
+          sales_engineer_phone: string | null
           status: string
           template: string
           template_id: string | null
@@ -908,6 +910,8 @@ export type Database = {
           proposal_number: string
           quotation_type?: string
           sales_engineer?: string | null
+          sales_engineer_email?: string | null
+          sales_engineer_phone?: string | null
           status?: string
           template?: string
           template_id?: string | null
@@ -937,6 +941,8 @@ export type Database = {
           proposal_number?: string
           quotation_type?: string
           sales_engineer?: string | null
+          sales_engineer_email?: string | null
+          sales_engineer_phone?: string | null
           status?: string
           template?: string
           template_id?: string | null
