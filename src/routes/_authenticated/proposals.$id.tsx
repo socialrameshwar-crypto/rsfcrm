@@ -95,6 +95,8 @@ function ProposalDetail() {
     },
   });
 
+  const { data: pTemplates = [] } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
+
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   const p = data;
@@ -151,8 +153,6 @@ function ProposalDetail() {
     const next = { ...ai, [key]: value } as AiProposalContent;
     patch.mutate({ ai_content: next }, { onSuccess: () => toast.success("Saved") });
   };
-
-  const { data: pTemplates = [] } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
 
   const applyTemplate = (tplId: string) => {
     const tpl = pTemplates.find(t => t.id === tplId);
