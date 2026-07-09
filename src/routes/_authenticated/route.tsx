@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell, ScrollText, Package, Sparkles, Blocks, LayoutTemplate,
+  LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell, ScrollText, Package, Sparkles, Blocks, LayoutTemplate, Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
