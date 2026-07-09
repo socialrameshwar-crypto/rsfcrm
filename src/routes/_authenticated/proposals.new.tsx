@@ -23,7 +23,7 @@ import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type Quot
 import { fetchCategories, fetchMachines } from "@/lib/products";
 import { fetchRules, fetchFormulas, pickBestRule, ruleToMachines, buildFormulaContext, evalFormula } from "@/lib/rules";
 import { Link } from "@tanstack/react-router";
-import { fetchTemplates as fetchProposalTemplates } from "@/lib/templates";
+
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
   component: NewProposalWizard,
@@ -60,8 +60,7 @@ function NewProposalWizard() {
   const [material, setMaterial] = useState<string>("SS304");
   const [currency, setCurrency] = useState("INR");
   const [template, setTemplate] = useState("corporate-blue");
-  const [templateChoice, setTemplateChoice] = useState<"default" | "saved">("default");
-  const [templateId, setTemplateId] = useState<string>("none");
+
   const [title, setTitle] = useState("");
 
   // Step 3 - machines editable
@@ -127,16 +126,6 @@ function NewProposalWizard() {
     queryFn: fetchCategories,
   });
 
-  // Proposal templates from Template Manager
-  const { data: proposalTemplates = [] } = useQuery({
-    queryKey: ["templates", false],
-    queryFn: () => fetchProposalTemplates(false),
-  });
-  const defaultTemplate = proposalTemplates.find(t => t.is_default) ?? null;
-  const selectedTemplate =
-    templateChoice === "default"
-      ? defaultTemplate
-      : (proposalTemplates.find(t => t.id === templateId) ?? null);
 
 
 
@@ -201,10 +190,7 @@ function NewProposalWizard() {
       setGenerating(true);
       const cust_id = await ensureCustomer();
       const cust = customers.find(c => c.id === cust_id) ?? { ...newCustomer };
-      const isPdfTpl = selectedTemplate?.mode === "pdf_overlay";
-      // AI content isn't needed for pixel-perfect templates (nothing is generated),
-      // so skip the LLM round-trip in that case.
-      const ai = isPdfTpl ? {} as any : await genAi({
+      const ai = await genAi({
         data: {
           customer: {
             company_name: cust.company_name,
@@ -220,29 +206,6 @@ function NewProposalWizard() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not signed in");
       const proposalNumber = generateProposalNumber();
-      // Precompute overlay values from wizard inputs when a PDF template is picked.
-      const overlayValues: Record<string, string> = {};
-      if (isPdfTpl) {
-        const validUntil = new Date(); validUntil.setDate(validUntil.getDate() + 30);
-        Object.assign(overlayValues, {
-          customer_name: cust.customer_name || cust.company_name || "",
-          company_name: cust.company_name || "",
-          contact_person: cust.contact_person || "",
-          email: cust.email || "",
-          mobile: cust.mobile || "",
-          address: [cust.city, cust.country].filter(Boolean).join(", "),
-          country: cust.country || "",
-          proposal_number: proposalNumber,
-          date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-          valid_until: validUntil.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-          product: productLabel,
-          capacity, automation, material, currency,
-          subtotal: String(commercials.machines_total ?? ""),
-          tax: String(commercials.tax ?? ""),
-          grand_total: String(commercials.grand_total ?? ""),
-          sales_engineer: salesEngineer || "",
-        });
-      }
       const { data, error } = await supabase.from("proposals").insert({
         user_id: userData.user.id,
         customer_id: cust_id,
@@ -258,11 +221,8 @@ function NewProposalWizard() {
         machines: currentMachines as any,
         utilities: utilities as any,
         commercials: commercials as any,
-        ai_content: { ...(selectedTemplate?.ai_content || {}), ...ai } as any,
-        blocks: (!isPdfTpl && selectedTemplate?.blocks && selectedTemplate.blocks.length ? selectedTemplate.blocks : null) as any,
+        ai_content: ai as any,
         template,
-        template_id: selectedTemplate?.id ?? null,
-        overlay_values: overlayValues as any,
         quotation_type: quotationType,
         terms_template_id: termsTemplateId || null,
       } as any).select("*").single();
@@ -373,78 +333,10 @@ function NewProposalWizard() {
         <Card className="p-6 shadow-elegant space-y-6">
           <div>
             <h2 className="font-semibold text-lg">Project information</h2>
-            <p className="text-sm text-muted-foreground">Pick a template from your Template Manager, then configure the plant scope.</p>
+            <p className="text-sm text-muted-foreground">Configure the plant scope.</p>
           </div>
 
-          {/* Proposal Template — Default or Saved */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">Proposal Template</Label>
-              <Link to="/templates" className="text-xs text-primary hover:underline">Manage templates →</Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setTemplateChoice("default")}
-                className={`text-left rounded-lg border-2 p-3 transition ${templateChoice === "default" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-              >
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <span className={`h-4 w-4 rounded-full border-2 ${templateChoice === "default" ? "border-primary bg-primary" : "border-muted-foreground"}`} />
-                  Default Template
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  {defaultTemplate
-                    ? <>Uses <b>{defaultTemplate.name}</b> automatically.</>
-                    : <>No default set — proposal will use built-in layout.</>}
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTemplateChoice("saved")}
-                className={`text-left rounded-lg border-2 p-3 transition ${templateChoice === "saved" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-              >
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <span className={`h-4 w-4 rounded-full border-2 ${templateChoice === "saved" ? "border-primary bg-primary" : "border-muted-foreground"}`} />
-                  Saved Template
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1">Pick from your imported templates.</div>
-              </button>
-            </div>
 
-            {templateChoice === "saved" && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-1">
-                {proposalTemplates.length === 0 && (
-                  <div className="col-span-full text-xs text-muted-foreground">
-                    No saved templates yet. <Link to="/templates" className="text-primary underline">Import one in Template Manager</Link>.
-                  </div>
-                )}
-                {proposalTemplates.map(t => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTemplateId(t.id)}
-                    className={`text-left rounded-lg border-2 p-3 transition ${templateId === t.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                  >
-                    <div className="flex items-center gap-1.5 text-sm font-medium">
-                      {t.mode === "pdf_overlay" && <span title="Pixel-perfect PDF">📄</span>}
-                      {t.is_default && <span title="Default" className="text-primary">★</span>}
-                      <span className="truncate">{t.name}</span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground mt-1 capitalize">
-                      {t.category}{t.mode === "pdf_overlay" ? ` · ${t.source_pdf_pages ?? 0} pages` : " · blocks"}
-                    </div>
-                    {t.description && <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{t.description}</div>}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {selectedTemplate?.mode === "pdf_overlay" && (
-              <p className="text-[11px] text-primary">
-                Pixel-perfect template — the proposal PDF will match this template's design exactly and only replace dynamic fields (customer, dates, prices, etc.).
-              </p>
-            )}
-          </div>
 
 
           <div className="pt-4 border-t">
