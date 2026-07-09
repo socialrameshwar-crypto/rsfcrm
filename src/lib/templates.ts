@@ -1,0 +1,97 @@
+import { supabase } from "@/integrations/supabase/client";
+import type { ProposalBlock } from "./blocks";
+import type { AiProposalContent } from "./ai.functions";
+import { defaultBlocks } from "./blocks";
+
+export const TEMPLATE_CATEGORIES = [
+  { value: "general", label: "General" },
+  { value: "domestic", label: "Domestic (India)" },
+  { value: "export", label: "Export" },
+  { value: "tender", label: "Tender" },
+  { value: "custom", label: "Custom" },
+] as const;
+
+export interface Template {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  scope: string;
+  tags: string[];
+  blocks: ProposalBlock[];
+  ai_content: Partial<AiProposalContent>;
+  sections: any;
+  thumbnail_url: string | null;
+  is_default: boolean;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchTemplates(includeArchived = false): Promise<Template[]> {
+  let q = (supabase as any).from("proposal_templates").select("*").order("updated_at", { ascending: false });
+  if (!includeArchived) q = q.eq("archived", false);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as Template[];
+}
+
+export async function getTemplate(id: string): Promise<Template> {
+  const { data, error } = await (supabase as any).from("proposal_templates").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data as Template;
+}
+
+export async function createTemplate(input: {
+  name: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+  blocks?: ProposalBlock[];
+  ai_content?: Partial<AiProposalContent>;
+}): Promise<Template> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) throw new Error("Not signed in");
+  const payload = {
+    user_id: userData.user.id,
+    name: input.name,
+    description: input.description ?? null,
+    category: input.category ?? "general",
+    scope: input.category ?? "general",
+    tags: input.tags ?? [],
+    blocks: (input.blocks ?? defaultBlocks()) as any,
+    ai_content: (input.ai_content ?? {}) as any,
+    sections: {} as any,
+  };
+  const { data, error } = await (supabase as any).from("proposal_templates").insert(payload).select("*").single();
+  if (error) throw error;
+  return data as Template;
+}
+
+export async function updateTemplate(id: string, patch: Partial<Template>): Promise<void> {
+  const p: any = {};
+  for (const k of ["name", "description", "category", "tags", "blocks", "ai_content", "thumbnail_url", "archived", "scope"] as const) {
+    if ((patch as any)[k] !== undefined) p[k] = (patch as any)[k];
+  }
+  if (p.category !== undefined && patch.scope === undefined) p.scope = p.category;
+  const { error } = await (supabase as any).from("proposal_templates").update(p).eq("id", id);
+  if (error) throw error;
+}
+
+export async function duplicateTemplate(id: string): Promise<Template> {
+  const src = await getTemplate(id);
+  return createTemplate({
+    name: `${src.name} (copy)`,
+    description: src.description ?? undefined,
+    category: src.category,
+    tags: src.tags,
+    blocks: src.blocks,
+    ai_content: src.ai_content,
+  });
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  const { error } = await (supabase as any).from("proposal_templates").delete().eq("id", id);
+  if (error) throw error;
+}
