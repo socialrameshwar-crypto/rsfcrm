@@ -430,7 +430,7 @@ function NewProposalWizard() {
                   toast.success(`Added ${mapped.length} machine${mapped.length === 1 ? "" : "s"} from "${cat.name}"`);
                 }).catch(e => toast.error(e.message));
               }}>
-                <SelectTrigger className="w-56"><SelectValue placeholder="Load from product library…" /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-56"><SelectValue placeholder="Load from product library…" /></SelectTrigger>
                 <SelectContent>
                   {libraryCategories.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No categories yet — create some in Products.</div>}
                   {libraryCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
