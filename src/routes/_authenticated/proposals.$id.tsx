@@ -17,6 +17,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { EmailComposer } from "@/components/EmailComposer";
+import { ContentBlockPicker } from "@/components/ContentBlockPicker";
+import { AI_SECTIONS, fetchProposalTemplates } from "@/lib/content";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   component: ProposalDetail,
