@@ -60,6 +60,7 @@ function NewProposalWizard() {
   const [material, setMaterial] = useState<string>("SS304");
   const [currency, setCurrency] = useState("INR");
   const [template, setTemplate] = useState("corporate-blue");
+  const [templateChoice, setTemplateChoice] = useState<"default" | "saved">("default");
   const [templateId, setTemplateId] = useState<string>("none");
   const [title, setTitle] = useState("");
 
