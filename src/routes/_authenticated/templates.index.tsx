@@ -466,7 +466,7 @@ function ImportDialog({ open, onOpenChange, runImport, onCreated }: {
               accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,image/png,image/jpeg,image/webp"
               onChange={e => setFile(e.target.files?.[0] ?? null)} />
             {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {(file.size/1024).toFixed(0)} KB</p>}
-            <p className="text-[11px] text-muted-foreground mt-1">AI extracts a block-based layout (text, sections, tables, machines, terms). Complex visual formatting is approximated, not pixel-perfect.</p>
+            <p className="text-[11px] text-muted-foreground mt-1"><b>PDF uploads are kept pixel-perfect</b> — the file becomes the visual layer and output matches the original exactly. DOCX / PPTX / images are converted by AI into editable blocks (approximation, not pixel-perfect).</p>
           </div>
         </div>
         <DialogFooter>
