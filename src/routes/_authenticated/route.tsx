@@ -109,17 +109,20 @@ function AppShell() {
 
       {/* Main */}
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        <header className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b h-16 flex items-center gap-4 px-4 lg:px-8">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)}>
+        <header className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b h-16 flex items-center gap-2 sm:gap-4 px-3 sm:px-4 lg:px-8">
+          <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="relative flex-1 max-w-xl">
+          <div className="relative flex-1 min-w-0 max-w-xl">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search proposals, customers, machines…" className="pl-9 bg-secondary/60 border-transparent" />
+            <Input placeholder="Search…" className="pl-9 bg-secondary/60 border-transparent" />
           </div>
-          <Button variant="ghost" size="icon"><Bell className="h-5 w-5" /></Button>
-          <Button asChild size="sm" className="gradient-primary">
-            <Link to="/proposals/new"><PlusCircle className="h-4 w-4 mr-1" /> New Proposal</Link>
+          <Button variant="ghost" size="icon" className="shrink-0 hidden sm:inline-flex"><Bell className="h-5 w-5" /></Button>
+          <Button asChild size="sm" className="gradient-primary shrink-0">
+            <Link to="/proposals/new">
+              <PlusCircle className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">New Proposal</span>
+            </Link>
           </Button>
         </header>
         <main className="flex-1 p-4 lg:p-8">
