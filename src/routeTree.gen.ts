@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
 import { Route as AuthenticatedSettingsTermsRouteImport } from './routes/_authenticated/settings.terms'
+import { Route as AuthenticatedSettingsRulesRouteImport } from './routes/_authenticated/settings.rules'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
 import { Route as AuthenticatedProposalsNewRouteImport } from './routes/_authenticated/proposals.new'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
@@ -56,6 +57,12 @@ const AuthenticatedSettingsTermsRoute =
     path: '/settings/terms',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSettingsRulesRoute =
+  AuthenticatedSettingsRulesRouteImport.update({
+    id: '/settings/rules',
+    path: '/settings/rules',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsProductsRoute =
   AuthenticatedSettingsProductsRouteImport.update({
     id: '/settings/products',
@@ -83,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/proposals/new': typeof AuthenticatedProposalsNewRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/rules': typeof AuthenticatedSettingsRulesRoute
   '/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
 }
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/proposals/new': typeof AuthenticatedProposalsNewRoute
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/settings/rules': typeof AuthenticatedSettingsRulesRoute
   '/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
 }
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/proposals/new': typeof AuthenticatedProposalsNewRoute
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
+  '/_authenticated/settings/rules': typeof AuthenticatedSettingsRulesRoute
   '/_authenticated/settings/terms': typeof AuthenticatedSettingsTermsRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
 }
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/proposals/$id'
     | '/proposals/new'
     | '/settings/products'
+    | '/settings/rules'
     | '/settings/terms'
     | '/proposals/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/proposals/$id'
     | '/proposals/new'
     | '/settings/products'
+    | '/settings/rules'
     | '/settings/terms'
     | '/proposals'
   id:
@@ -143,6 +155,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals/$id'
     | '/_authenticated/proposals/new'
     | '/_authenticated/settings/products'
+    | '/_authenticated/settings/rules'
     | '/_authenticated/settings/terms'
     | '/_authenticated/proposals/'
   fileRoutesById: FileRoutesById
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsTermsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/rules': {
+      id: '/_authenticated/settings/rules'
+      path: '/settings/rules'
+      fullPath: '/settings/rules'
+      preLoaderRoute: typeof AuthenticatedSettingsRulesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/products': {
       id: '/_authenticated/settings/products'
       path: '/settings/products'
@@ -234,6 +254,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRoute
   AuthenticatedProposalsNewRoute: typeof AuthenticatedProposalsNewRoute
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
+  AuthenticatedSettingsRulesRoute: typeof AuthenticatedSettingsRulesRoute
   AuthenticatedSettingsTermsRoute: typeof AuthenticatedSettingsTermsRoute
   AuthenticatedProposalsIndexRoute: typeof AuthenticatedProposalsIndexRoute
 }
@@ -244,6 +265,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProposalsIdRoute: AuthenticatedProposalsIdRoute,
   AuthenticatedProposalsNewRoute: AuthenticatedProposalsNewRoute,
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
+  AuthenticatedSettingsRulesRoute: AuthenticatedSettingsRulesRoute,
   AuthenticatedSettingsTermsRoute: AuthenticatedSettingsTermsRoute,
   AuthenticatedProposalsIndexRoute: AuthenticatedProposalsIndexRoute,
 }
