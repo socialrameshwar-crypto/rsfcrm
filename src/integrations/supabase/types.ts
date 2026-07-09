@@ -350,6 +350,7 @@ export type Database = {
         Row: {
           ai_content: Json
           automation: string
+          blocks: Json | null
           capacity: string
           commercials: Json
           created_at: string
@@ -375,6 +376,7 @@ export type Database = {
         Insert: {
           ai_content?: Json
           automation: string
+          blocks?: Json | null
           capacity: string
           commercials?: Json
           created_at?: string
@@ -400,6 +402,7 @@ export type Database = {
         Update: {
           ai_content?: Json
           automation?: string
+          blocks?: Json | null
           capacity?: string
           commercials?: Json
           created_at?: string

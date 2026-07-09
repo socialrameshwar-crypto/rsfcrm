@@ -12,7 +12,7 @@ import { PRODUCT_TYPES, STATUSES, TEMPLATES } from "@/lib/proposal-catalog";
 import { generateProposalPdf, getProposalPdfBlobUrl } from "@/lib/pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks } from "lucide-react";
+import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks, LayoutTemplate } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
@@ -200,6 +200,7 @@ function ProposalDetail() {
           <Button variant="outline" onClick={() => confirm("Delete this proposal?") && del.mutate()}>
             <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
           </Button>
+          <Button variant="outline" asChild><Link to="/proposals/$id/edit" params={{ id }}><LayoutTemplate className="h-4 w-4 mr-1" /> Editor</Link></Button>
           <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
           <Button variant="outline" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1" /> Email</Button>
           <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
