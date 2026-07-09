@@ -252,7 +252,7 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
     };
 
     // pdf-lib
-    const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+    const { PDFDocument, StandardFonts, rgb } = await import("@/lib/pdf-lib.server");
     const doc = await PDFDocument.load(srcBytes);
     const helv = await doc.embedFont(StandardFonts.Helvetica);
     const helvBold = await doc.embedFont(StandardFonts.HelveticaBold);
