@@ -228,6 +228,8 @@ function NewProposalWizard() {
         currency,
         status: "draft",
         sales_engineer: salesEngineer || null,
+        sales_engineer_phone: salesEngineerPhone || null,
+        sales_engineer_email: salesEngineerEmail || null,
         follow_up_date: followUp || null,
         total_value: commercials.grand_total,
         machines: currentMachines as any,
