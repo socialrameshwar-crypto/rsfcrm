@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      content_blocks: {
+        Row: {
+          archived: boolean
+          body: string
+          category: string
+          created_at: string
+          id: string
+          name: string
+          product_slug: string | null
+          sort_order: number
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          name: string
+          product_slug?: string | null
+          sort_order?: number
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          product_slug?: string | null
+          sort_order?: number
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           city: string | null
@@ -260,6 +302,45 @@ export type Database = {
           name?: string
           slug?: string | null
           sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      proposal_templates: {
+        Row: {
+          archived: boolean
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          scope: string
+          sections: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          scope?: string
+          sections?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          scope?: string
+          sections?: Json
           updated_at?: string
           user_id?: string
         }

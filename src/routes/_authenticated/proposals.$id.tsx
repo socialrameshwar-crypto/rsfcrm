@@ -12,11 +12,13 @@ import { PRODUCT_TYPES, STATUSES, TEMPLATES } from "@/lib/proposal-catalog";
 import { generateProposalPdf, getProposalPdfBlobUrl } from "@/lib/pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail } from "lucide-react";
+import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { EmailComposer } from "@/components/EmailComposer";
+import { ContentBlockPicker } from "@/components/ContentBlockPicker";
+import { AI_SECTIONS, fetchProposalTemplates } from "@/lib/content";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   component: ProposalDetail,
@@ -33,6 +35,8 @@ function ProposalDetail() {
   const [previewZoom, setPreviewZoom] = useState(100);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [blockPickerOpen, setBlockPickerOpen] = useState(false);
+  const [targetSection, setTargetSection] = useState<keyof AiProposalContent>("scope_of_supply");
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
@@ -146,6 +150,27 @@ function ProposalDetail() {
     const next = { ...ai, [key]: value } as AiProposalContent;
     patch.mutate({ ai_content: next }, { onSuccess: () => toast.success("Saved") });
   };
+
+  const { data: pTemplates = [] } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
+
+  const applyTemplate = (tplId: string) => {
+    const tpl = pTemplates.find(t => t.id === tplId);
+    if (!tpl) return;
+    const next: AiProposalContent = { ...ai };
+    for (const [k, v] of Object.entries(tpl.sections || {})) {
+      if (v !== undefined && v !== null && String(v).trim()) (next as any)[k] = v;
+    }
+    patch.mutate({ ai_content: next as any }, { onSuccess: () => toast.success(`Applied template: ${tpl.name}`) });
+  };
+
+  const insertBlock = (blockBody: string, mode: "append" | "replace") => {
+    const current = (ai as any)[targetSection] ?? "";
+    const currentStr = Array.isArray(current) ? current.join("\n") : String(current || "");
+    const next = mode === "replace" ? blockBody : (currentStr ? `${currentStr}\n\n${blockBody}` : blockBody);
+    saveAiField(targetSection, next);
+  };
+
+
 
   const saveMachines = (next: Machine[]) => {
     const machines_total = next.reduce((s, m) => s + (Number(m.unit_price) || 0) * (Number(m.qty) || 0), 0);
@@ -326,7 +351,38 @@ function ProposalDetail() {
       <EditableMachineTable machines={machines} currency={p.currency} onSave={saveMachines} />
 
       <Card className="p-5 shadow-elegant">
-        <h3 className="font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Technical Proposal <span className="text-xs font-normal text-muted-foreground">— click any section to edit</span></h3>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+          <h3 className="font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Technical Proposal <span className="text-xs font-normal text-muted-foreground">— click any section to edit</span></h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            {pTemplates.length > 0 && (
+              <Select value="" onValueChange={applyTemplate}>
+                <SelectTrigger className="h-8 w-48"><SelectValue placeholder="Apply template…" /></SelectTrigger>
+                <SelectContent>
+                  {pTemplates.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name} <span className="text-muted-foreground">· {t.scope}</span></SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={targetSection} onValueChange={v => setTargetSection(v as keyof AiProposalContent)}>
+              <SelectTrigger className="h-8 w-52"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {AI_SECTIONS.map(s => <SelectItem key={s.key} value={s.key}>Target: {s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" variant="outline" onClick={() => setBlockPickerOpen(true)}>
+              <Blocks className="h-3.5 w-3.5 mr-1" /> Insert block
+            </Button>
+          </div>
+        </div>
+        <ContentBlockPicker
+          open={blockPickerOpen}
+          onOpenChange={setBlockPickerOpen}
+          productSlug={p.product_type}
+          targetLabel={AI_SECTIONS.find(s => s.key === targetSection)?.label}
+          onInsert={(b, mode) => insertBlock(b.body, mode)}
+        />
+
         <div className="space-y-5 text-sm leading-relaxed">
           <EditableSection title="Executive Summary" value={ai.executive_summary} onSave={v => saveAiField("executive_summary", v)} />
           <EditableSection title="Company Introduction" value={ai.company_introduction} onSave={v => saveAiField("company_introduction", v)} />
