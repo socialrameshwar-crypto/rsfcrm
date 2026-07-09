@@ -122,6 +122,7 @@ function ProposalDetail() {
     template: p.template,
     quotation_type: (((p as any).quotation_type as "domestic" | "export") ?? "domestic"),
     terms: termsClauses,
+    blocks: ((p as any).blocks as any[] | null) ?? undefined,
   };
 
   const downloadPdf = () => { generateProposalPdf(pdfInput); toast.success("Downloading PDF"); };
