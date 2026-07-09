@@ -73,37 +73,44 @@ function AppShell() {
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex items-center gap-3 px-5 h-16 border-b border-sidebar-border">
-          <div className="h-9 w-9 rounded-lg gradient-primary grid place-items-center">
-            <Factory className="h-5 w-5 text-primary-foreground" />
+          <div className="h-9 w-9 rounded-lg bg-primary grid place-items-center font-bold text-primary-foreground">
+            RSF
           </div>
           <div>
             <div className="text-sm font-bold leading-tight">Rameshwar Steel Fab</div>
-            <div className="text-[10px] opacity-70 uppercase tracking-wider">Proposal Suite</div>
+            <div className="text-[10px] opacity-70 uppercase tracking-wider">RSF CRM</div>
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
-          <div className="px-3 py-2 text-[10px] uppercase tracking-wider opacity-60">Workspace</div>
-          {NAV.map(item => {
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider opacity-60">CRM</div>
+          {CRM_NAV.map((item: NavItem) => {
             const Icon = item.icon;
-            const active = pathname === item.to || (item.to !== "/dashboard" && pathname.startsWith(item.to) && item.to !== "/proposals/new");
+            const active = pathname === item.to || (item.to !== "/crm" && pathname.startsWith(item.to));
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "hover:bg-sidebar-accent/60 opacity-90",
+              <Link key={item.to} to={item.to}
+                className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm transition",
+                  active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60 opacity-90",
+                )}>
+                <Icon className="h-4 w-4" />{item.label}
+              </Link>
+            );
+          })}
+          <div className="px-3 pt-4 pb-1 text-[10px] uppercase tracking-wider opacity-60">Proposal Suite</div>
+          {PROPOSAL_NAV.map((item: NavItem) => {
+            const Icon = item.icon;
+            const active = pathname === item.to || (item.to !== "/dashboard" && item.to !== "/" && pathname.startsWith(item.to) && item.to !== "/proposals/new");
+            return (
+              <Link key={item.to} to={item.to}
+                className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm transition",
+                  active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60 opacity-90",
                   item.highlight && !active && "text-sidebar-primary-foreground bg-sidebar-primary/30 hover:bg-sidebar-primary/50",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                )}>
+                <Icon className="h-4 w-4" />{item.label}
               </Link>
             );
           })}
         </nav>
+
         <div className="p-3 border-t border-sidebar-border">
           <div className="flex items-center gap-3 px-2 py-2">
             <Avatar className="h-8 w-8"><AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">{initials}</AvatarFallback></Avatar>
