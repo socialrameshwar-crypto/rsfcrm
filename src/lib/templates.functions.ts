@@ -183,14 +183,33 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: ((v >> 16) & 255) / 255, g: ((v >> 8) & 255) / 255, b: (v & 255) / 255 };
 }
 
+function currencyPrefix(currency: string): string {
+  // Avoid glyphs outside WinAnsi (e.g. ₹) which pdf-lib StandardFonts can't encode.
+  const map: Record<string, string> = { INR: "Rs.", USD: "$", EUR: "EUR ", GBP: "GBP ", JPY: "JPY ", AUD: "A$", CAD: "C$" };
+  return map[currency?.toUpperCase()] ?? `${currency} `;
+}
+
 function fmtMoney(n: number, currency: string): string {
   if (!isFinite(n)) return "";
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `${currency} ${Math.round(n).toLocaleString()}`;
-  }
+  const rounded = Math.round(n).toLocaleString("en-IN");
+  return `${currencyPrefix(currency)}${rounded}`;
 }
+
+// Replace characters that WinAnsi (pdf-lib StandardFonts) cannot encode.
+function sanitizeWinAnsi(s: string): string {
+  if (!s) return "";
+  return s
+    .replace(/\u20B9/g, "Rs.")   // ₹
+    .replace(/\u20AC/g, "EUR ")  // €  (actually in WinAnsi, but safe)
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\u00A0/g, " ")
+    // Drop any remaining non-WinAnsi (outside basic latin + latin-1 supplement) chars
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+}
+
 
 function tokenValue(token: string, ctx: {
   proposal: any; customer: any;
