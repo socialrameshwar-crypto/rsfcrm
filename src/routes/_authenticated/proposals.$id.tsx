@@ -200,6 +200,7 @@ function ProposalDetail() {
           <Button variant="outline" onClick={() => confirm("Delete this proposal?") && del.mutate()}>
             <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
           </Button>
+          <Button variant="outline" asChild><Link to="/proposals/$id/edit" params={{ id }}><LayoutTemplate className="h-4 w-4 mr-1" /> Editor</Link></Button>
           <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
           <Button variant="outline" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1" /> Email</Button>
           <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
