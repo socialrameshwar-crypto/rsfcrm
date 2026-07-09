@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
   { to: "/proposals/new", label: "New Proposal", icon: PlusCircle, highlight: true },
   { to: "/settings/products", label: "Products & Machines", icon: Package },
   { to: "/settings/rules", label: "Auto-Select & Formulas", icon: Sparkles },
+  { to: "/settings/content", label: "Content Library", icon: Blocks },
   { to: "/settings/terms", label: "Terms Library", icon: ScrollText },
 ];
 
