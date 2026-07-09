@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { AiProposalContent } from "./ai.functions";
 import type { Machine, Utilities, Commercials } from "./proposal-catalog";
+import type { ProposalBlock } from "./blocks";
 import logoAsset from "@/assets/rsf-logo.png.asset.json";
 
 export interface ProposalTermsClause { title: string; body: string }
