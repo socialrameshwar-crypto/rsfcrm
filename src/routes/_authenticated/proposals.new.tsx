@@ -126,6 +126,14 @@ function NewProposalWizard() {
     queryFn: fetchCategories,
   });
 
+  // Proposal templates from Template Manager
+  const { data: proposalTemplates = [] } = useQuery({
+    queryKey: ["templates", false],
+    queryFn: () => fetchProposalTemplates(false),
+  });
+  const selectedTemplate = proposalTemplates.find(t => t.id === templateId);
+
+
   const [quotationType, setQuotationType] = useState<QuotationType>("domestic");
   const [modeAutoSet, setModeAutoSet] = useState(false);
   const [termsTemplateId, setTermsTemplateId] = useState<string>("");
