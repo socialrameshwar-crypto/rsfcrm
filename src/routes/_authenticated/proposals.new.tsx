@@ -126,16 +126,6 @@ function NewProposalWizard() {
     queryFn: fetchCategories,
   });
 
-  // Proposal templates from Template Manager
-  const { data: proposalTemplates = [] } = useQuery({
-    queryKey: ["templates", false],
-    queryFn: () => fetchProposalTemplates(false),
-  });
-  const defaultTemplate = proposalTemplates.find(t => t.is_default) ?? null;
-  const selectedTemplate =
-    templateChoice === "default"
-      ? defaultTemplate
-      : (proposalTemplates.find(t => t.id === templateId) ?? null);
 
 
 
