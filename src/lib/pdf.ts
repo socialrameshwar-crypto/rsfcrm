@@ -112,6 +112,7 @@ function fitLine(doc: jsPDF, text: string, maxWidth: number): string {
 }
 
 export async function buildProposalPdf(p: ProposalPdfInput) {
+  if (p.blocks && p.blocks.length) return buildBlockPdf(p);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
