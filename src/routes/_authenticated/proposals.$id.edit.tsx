@@ -161,6 +161,16 @@ function BlockEditor() {
     setSaved(false);
   };
 
+  const applyImport = (imported: ProposalBlock[], importedAi: Partial<AiProposalContent>, mode: "replace" | "append") => {
+    const nextBlocks = mode === "replace" ? imported : [...blocks, ...imported];
+    commit(nextBlocks);
+    if (Object.keys(importedAi).length) {
+      setAi(a => ({ ...a, ...importedAi }));
+      setSaved(false);
+    }
+  };
+
+
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading editor…</div>;
 
   const p = data as any;
