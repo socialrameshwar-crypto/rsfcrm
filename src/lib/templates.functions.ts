@@ -293,16 +293,17 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
           color: rgb(1, 1, 1),
         });
       }
-      if (!text) return;
+      const safe = sanitizeWinAnsi(text);
+      if (!safe) return;
       const size = Math.max(6, Math.min(48, opts.size));
-      const tw = font.widthOfTextAtSize(text, size);
+      const tw = font.widthOfTextAtSize(safe, size);
       let tx = opts.x;
       if (opts.align === "center") tx = opts.x + (opts.w - tw) / 2;
       else if (opts.align === "right") tx = opts.x + opts.w - tw;
       const ascent = font.heightAtSize(size, { descender: false });
       const ty = ph - opts.y - opts.h + Math.max(0, (opts.h - ascent) / 2);
       const c = hexToRgb(opts.color);
-      page.drawText(text, { x: tx, y: ty, size, font, color: rgb(c.r, c.g, c.b) });
+      page.drawText(safe, { x: tx, y: ty, size, font, color: rgb(c.r, c.g, c.b) });
     };
 
     // Stamp fields
