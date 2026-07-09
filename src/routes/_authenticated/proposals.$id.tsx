@@ -151,6 +151,27 @@ function ProposalDetail() {
     patch.mutate({ ai_content: next }, { onSuccess: () => toast.success("Saved") });
   };
 
+  const { data: pTemplates = [] } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
+
+  const applyTemplate = (tplId: string) => {
+    const tpl = pTemplates.find(t => t.id === tplId);
+    if (!tpl) return;
+    const next: AiProposalContent = { ...ai };
+    for (const [k, v] of Object.entries(tpl.sections || {})) {
+      if (v !== undefined && v !== null && String(v).trim()) (next as any)[k] = v;
+    }
+    patch.mutate({ ai_content: next as any }, { onSuccess: () => toast.success(`Applied template: ${tpl.name}`) });
+  };
+
+  const insertBlock = (blockBody: string, mode: "append" | "replace") => {
+    const current = (ai as any)[targetSection] ?? "";
+    const currentStr = Array.isArray(current) ? current.join("\n") : String(current || "");
+    const next = mode === "replace" ? blockBody : (currentStr ? `${currentStr}\n\n${blockBody}` : blockBody);
+    saveAiField(targetSection, next);
+  };
+
+
+
   const saveMachines = (next: Machine[]) => {
     const machines_total = next.reduce((s, m) => s + (Number(m.unit_price) || 0) * (Number(m.qty) || 0), 0);
     const freight = Number(commercials.freight) || 0;
