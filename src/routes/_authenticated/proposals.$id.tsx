@@ -35,6 +35,8 @@ function ProposalDetail() {
   const [previewZoom, setPreviewZoom] = useState(100);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [blockPickerOpen, setBlockPickerOpen] = useState(false);
+  const [targetSection, setTargetSection] = useState<keyof AiProposalContent>("scope_of_supply");
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
