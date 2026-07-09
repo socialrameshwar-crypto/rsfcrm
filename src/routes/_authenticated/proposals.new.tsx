@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import {
   PRODUCT_TYPES, CAPACITIES, AUTOMATIONS, MATERIALS, CURRENCIES, TEMPLATES,
-  buildMachineList, calcUtilities, calcCommercials, generateProposalNumber,
+  buildMachineList, calcCommercials, generateProposalNumber,
   type ProductType, type Machine,
 } from "@/lib/proposal-catalog";
 import { formatMoney } from "@/lib/format";
