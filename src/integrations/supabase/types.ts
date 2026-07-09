@@ -309,7 +309,10 @@ export type Database = {
       }
       proposal_templates: {
         Row: {
+          ai_content: Json
           archived: boolean
+          blocks: Json
+          category: string
           created_at: string
           description: string | null
           id: string
@@ -317,11 +320,16 @@ export type Database = {
           name: string
           scope: string
           sections: Json
+          tags: string[]
+          thumbnail_url: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          ai_content?: Json
           archived?: boolean
+          blocks?: Json
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -329,11 +337,16 @@ export type Database = {
           name: string
           scope?: string
           sections?: Json
+          tags?: string[]
+          thumbnail_url?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          ai_content?: Json
           archived?: boolean
+          blocks?: Json
+          category?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -341,6 +354,8 @@ export type Database = {
           name?: string
           scope?: string
           sections?: Json
+          tags?: string[]
+          thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
         }

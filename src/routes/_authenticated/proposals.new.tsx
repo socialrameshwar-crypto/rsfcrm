@@ -23,6 +23,7 @@ import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type Quot
 import { fetchCategories, fetchMachines } from "@/lib/products";
 import { fetchRules, fetchFormulas, pickBestRule, ruleToMachines, buildFormulaContext, evalFormula } from "@/lib/rules";
 import { Link } from "@tanstack/react-router";
+import { fetchTemplates as fetchProposalTemplates } from "@/lib/templates";
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
   component: NewProposalWizard,
@@ -59,6 +60,7 @@ function NewProposalWizard() {
   const [material, setMaterial] = useState<string>("SS304");
   const [currency, setCurrency] = useState("INR");
   const [template, setTemplate] = useState("corporate-blue");
+  const [templateId, setTemplateId] = useState<string>("none");
   const [title, setTitle] = useState("");
 
   // Step 3 - machines editable
@@ -123,6 +125,14 @@ function NewProposalWizard() {
     queryKey: ["product-categories"],
     queryFn: fetchCategories,
   });
+
+  // Proposal templates from Template Manager
+  const { data: proposalTemplates = [] } = useQuery({
+    queryKey: ["templates", false],
+    queryFn: () => fetchProposalTemplates(false),
+  });
+  const selectedTemplate = proposalTemplates.find(t => t.id === templateId);
+
 
   const [quotationType, setQuotationType] = useState<QuotationType>("domestic");
   const [modeAutoSet, setModeAutoSet] = useState(false);
@@ -215,7 +225,8 @@ function NewProposalWizard() {
         machines: currentMachines as any,
         utilities: utilities as any,
         commercials: commercials as any,
-        ai_content: ai as any,
+        ai_content: { ...(selectedTemplate?.ai_content || {}), ...ai } as any,
+        blocks: (selectedTemplate?.blocks && selectedTemplate.blocks.length ? selectedTemplate.blocks : null) as any,
         template,
         quotation_type: quotationType,
         terms_template_id: termsTemplateId || null,
@@ -375,6 +386,23 @@ function NewProposalWizard() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{TEMPLATES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
               </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Label>Start from template <span className="text-muted-foreground font-normal">(optional — uses layout, headings & default content from Template Manager)</span></Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger><SelectValue placeholder="Blank — no template" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Blank — no template</SelectItem>
+                  {proposalTemplates.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name} · {t.category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {proposalTemplates.length === 0 && (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  No templates yet. <Link to="/templates" className="text-primary underline">Create one in Template Manager</Link>.
+                </p>
+              )}
             </div>
           </div>
         </Card>
