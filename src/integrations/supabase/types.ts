@@ -327,9 +327,12 @@ export type Database = {
       }
       crm_quotation_items: {
         Row: {
+          capacity: string | null
           created_at: string
           id: string
           line_total: number
+          moc: string | null
+          motor: string | null
           product_id: string | null
           product_name: string
           qty: number
@@ -337,9 +340,12 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          capacity?: string | null
           created_at?: string
           id?: string
           line_total?: number
+          moc?: string | null
+          motor?: string | null
           product_id?: string | null
           product_name: string
           qty?: number
@@ -347,9 +353,12 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          capacity?: string | null
           created_at?: string
           id?: string
           line_total?: number
+          moc?: string | null
+          motor?: string | null
           product_id?: string | null
           product_name?: string
           qty?: number
@@ -389,14 +398,20 @@ export type Database = {
           grand_total: number
           id: string
           igst: number
+          intro_note: string | null
           lead_id: string | null
           payment_terms: string | null
           quote_date: string
           quote_no: string | null
+          sales_engineer_email: string | null
+          sales_engineer_name: string | null
+          sales_engineer_phone: string | null
           sgst: number
           status: Database["public"]["Enums"]["quote_status"]
+          subject: string | null
           subtotal: number
           tax_mode: string
+          terms_json: Json | null
           updated_at: string
           user_id: string
           validity_days: number
@@ -409,14 +424,20 @@ export type Database = {
           grand_total?: number
           id?: string
           igst?: number
+          intro_note?: string | null
           lead_id?: string | null
           payment_terms?: string | null
           quote_date?: string
           quote_no?: string | null
+          sales_engineer_email?: string | null
+          sales_engineer_name?: string | null
+          sales_engineer_phone?: string | null
           sgst?: number
           status?: Database["public"]["Enums"]["quote_status"]
+          subject?: string | null
           subtotal?: number
           tax_mode?: string
+          terms_json?: Json | null
           updated_at?: string
           user_id?: string
           validity_days?: number
@@ -429,14 +450,20 @@ export type Database = {
           grand_total?: number
           id?: string
           igst?: number
+          intro_note?: string | null
           lead_id?: string | null
           payment_terms?: string | null
           quote_date?: string
           quote_no?: string | null
+          sales_engineer_email?: string | null
+          sales_engineer_name?: string | null
+          sales_engineer_phone?: string | null
           sgst?: number
           status?: Database["public"]["Enums"]["quote_status"]
+          subject?: string | null
           subtotal?: number
           tax_mode?: string
+          terms_json?: Json | null
           updated_at?: string
           user_id?: string
           validity_days?: number
