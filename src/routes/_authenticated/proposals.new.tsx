@@ -473,29 +473,56 @@ function NewProposalWizard() {
 
       {step === 4 && (
         <Card className="p-6 shadow-elegant">
-          <h2 className="font-semibold text-lg mb-1">Utility Calculator</h2>
-          <p className="text-sm text-muted-foreground mb-4">Auto-computed from the selected machines and capacity.</p>
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+            <div>
+              <h2 className="font-semibold text-lg">Utility Calculator</h2>
+              <p className="text-sm text-muted-foreground">
+                Computed from your formulas. Values are editable — overrides are saved with this proposal.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {Object.keys(utilityOverrides).length > 0 && (
+                <Button variant="ghost" size="sm" onClick={() => setUtilityOverrides({})}>Reset overrides</Button>
+              )}
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/settings/rules">Edit formulas</Link>
+              </Button>
+            </div>
+          </div>
+          {computedUtilities.length === 0 && (
+            <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground text-center">
+              No utility formulas yet. Open <Link to="/settings/rules" className="underline">Auto-Select & Formulas</Link> and click "Load default formulas".
+            </div>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              ["Connected load", `${utilities.connected_load_kw} kW`],
-              ["Running load", `${utilities.running_load_kw} kW`],
-              ["Power / day", `${utilities.power_kwh_day} kWh`],
-              ["Water", `${utilities.water_kld} KL/day`],
-              ["Steam", `${utilities.steam_kg_hr} kg/hr`],
-              ["Air", `${utilities.air_cfm} CFM`],
-              ["Manpower", `${utilities.manpower} / shift`],
-              ["Floor space", `${utilities.floor_space_sqm} sqm`],
-              ["Production / shift", `${utilities.production_per_shift_kg} kg`],
-              ["Production / day", `${utilities.production_per_day_kg} kg`],
-            ].map(([k, v]) => (
-              <div key={k} className="rounded-lg border p-4 bg-secondary/30">
-                <div className="text-xs text-muted-foreground">{k}</div>
-                <div className="text-xl font-semibold mt-1">{v}</div>
-              </div>
-            ))}
+            {computedUtilities.map(u => {
+              const val = utilityOverrides[u.key] ?? u.value;
+              const overridden = u.key in utilityOverrides;
+              return (
+                <div key={u.key} className={`rounded-lg border p-3 ${overridden ? "bg-primary/5 border-primary/40" : "bg-secondary/30"}`}>
+                  <div className="text-xs text-muted-foreground flex items-center justify-between">
+                    <span>{u.label}</span>
+                    {overridden && <button onClick={() => setUtilityOverrides(o => { const n = { ...o }; delete n[u.key]; return n; })} className="text-[10px] text-primary hover:underline">reset</button>}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Input
+                      value={String(val)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        const num = Number(v);
+                        setUtilityOverrides(o => ({ ...o, [u.key]: isFinite(num) && v.trim() !== "" ? num : v }));
+                      }}
+                      className="text-lg font-semibold h-9 px-2"
+                    />
+                    {u.unit && <span className="text-xs text-muted-foreground shrink-0">{u.unit}</span>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
+
 
       {step === 5 && (
         <Card className="p-6 shadow-elegant space-y-6">
