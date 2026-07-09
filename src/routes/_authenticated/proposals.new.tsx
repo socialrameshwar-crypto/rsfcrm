@@ -388,6 +388,21 @@ function NewProposalWizard() {
               <p className="text-sm text-muted-foreground">Auto-generated based on {productLabel} · {capacity} · {automation} · {material}.</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="default"
+                className="gradient-primary"
+                onClick={() => {
+                  const rule = pickBestRule(dbRules, { product, capacity, automation, material });
+                  if (!rule) {
+                    toast.info("No matching rule. Add one in Auto-Select & Formulas.");
+                    return;
+                  }
+                  setMachines(ruleToMachines(rule, material));
+                  toast.success(`Auto-selected via rule: ${rule.name}`);
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-1" /> Auto-select
+              </Button>
               <Select onValueChange={(cid) => {
                 const cat = libraryCategories.find(c => c.id === cid);
                 if (!cat) return;
