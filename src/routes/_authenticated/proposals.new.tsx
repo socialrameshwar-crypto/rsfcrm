@@ -69,11 +69,30 @@ function NewProposalWizard() {
   const [machines, setMachines] = useState<Machine[]>([]);
   const currentMachines = machines.length ? machines : defaultMachines;
 
-  // Step 4
-  const utilities = useMemo(
-    () => calcUtilities(product, capacity, automation, currentMachines),
-    [product, capacity, automation, currentMachines],
-  );
+  // Step 4 - utility formulas + editable overrides
+  const { data: dbFormulas = [] } = useQuery({ queryKey: ["formulas"], queryFn: fetchFormulas });
+  const { data: dbRules = [] } = useQuery({ queryKey: ["rules"], queryFn: () => fetchRules() });
+  const [utilityOverrides, setUtilityOverrides] = useState<Record<string, number | string>>({});
+
+  const computedUtilities = useMemo(() => {
+    const ctx = buildFormulaContext(product, capacity, automation, currentMachines);
+    const scoped = dbFormulas.filter(f => !f.product_slug || f.product_slug === product);
+    // Prefer product-specific over global (keep last-defined by key)
+    const byKey = new Map<string, typeof scoped[number]>();
+    for (const f of scoped) {
+      const prev = byKey.get(f.key);
+      if (!prev || (!prev.product_slug && f.product_slug)) byKey.set(f.key, f);
+    }
+    return Array.from(byKey.values())
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(f => ({ key: f.key, label: f.label, unit: f.unit || "", value: evalFormula(f.expression, ctx) }));
+  }, [dbFormulas, product, capacity, automation, currentMachines]);
+
+  const utilities = useMemo(() => {
+    const obj: Record<string, number | string> = {};
+    for (const u of computedUtilities) obj[u.key] = utilityOverrides[u.key] ?? u.value;
+    return obj;
+  }, [computedUtilities, utilityOverrides]);
 
   // Step 5
   const [taxRate, setTaxRate] = useState(18);
