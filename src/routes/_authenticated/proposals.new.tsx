@@ -337,8 +337,10 @@ function NewProposalWizard() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 border-t">
-            <div><Label>Sales engineer</Label><Input value={salesEngineer} onChange={e => setSalesEngineer(e.target.value)} placeholder="Assigned to…" /></div>
+            <div><Label>Sales engineer name</Label><Input value={salesEngineer} onChange={e => setSalesEngineer(e.target.value)} placeholder="Shown as PDF signature" /></div>
             <div><Label>Follow-up date</Label><Input type="date" value={followUp} onChange={e => setFollowUp(e.target.value)} /></div>
+            <div><Label>Sales engineer phone</Label><Input value={salesEngineerPhone} onChange={e => setSalesEngineerPhone(e.target.value)} placeholder="+91 …" /></div>
+            <div><Label>Sales engineer email</Label><Input type="email" value={salesEngineerEmail} onChange={e => setSalesEngineerEmail(e.target.value)} /></div>
           </div>
         </Card>
       )}
