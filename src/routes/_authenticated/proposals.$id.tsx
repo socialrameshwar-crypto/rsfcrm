@@ -216,6 +216,7 @@ function ProposalDetail() {
             <Trash2 className="h-4 w-4 mr-1 text-destructive" /> Delete
           </Button>
           <Button variant="outline" asChild><Link to="/proposals/$id/edit" params={{ id }}><LayoutTemplate className="h-4 w-4 mr-1" /> Editor</Link></Button>
+          <TemplateGenerateButton proposalId={id} currentTemplateId={(p as any).template_id ?? null} currentPath={(p as any).generated_pdf_path ?? null} />
           <Button variant="outline" onClick={openPreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
           <Button variant="outline" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1" /> Email</Button>
           <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
