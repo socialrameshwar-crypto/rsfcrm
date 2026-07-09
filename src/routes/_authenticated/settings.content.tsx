@@ -252,141 +252,335 @@ function BlockEditor({ block, onChange, onSave, onDelete, saving }: {
 
 function TemplatesTab() {
   const qc = useQueryClient();
-  const { data: templates = [], isLoading } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
+  const { data: templates = [], isLoading, error } = useQuery({
+    queryKey: ["proposal-templates"],
+    queryFn: fetchProposalTemplates,
+  });
   const [editing, setEditing] = useState<Partial<ProposalTemplate> | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const save = useMutation({
+  const openNew = () => {
+    setEditing({
+      name: "",
+      scope: "domestic",
+      description: "",
+      sections: {},
+      is_default: false,
+    });
+    setSheetOpen(true);
+  };
+
+  const openExisting = (t: ProposalTemplate) => {
+    setEditing(t);
+    setSheetOpen(true);
+  };
+
+  const saveMut = useMutation({
     mutationFn: async (t: Partial<ProposalTemplate>) => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
       if (!u.user) throw new Error("Not signed in");
       const payload: any = {
         user_id: u.user.id,
-        name: t.name || "Untitled template",
+        name: (t.name || "").trim() || "Untitled template",
         scope: t.scope || "domestic",
         description: t.description || null,
         sections: t.sections || {},
         is_default: !!t.is_default,
       };
       if (t.id) {
-        const { error } = await (supabase as any).from("proposal_templates").update(payload).eq("id", t.id);
+        const { data, error } = await (supabase as any)
+          .from("proposal_templates")
+          .update(payload)
+          .eq("id", t.id)
+          .select()
+          .single();
         if (error) throw error;
+        return data as ProposalTemplate;
       } else {
-        const { error } = await (supabase as any).from("proposal_templates").insert(payload);
+        const { data, error } = await (supabase as any)
+          .from("proposal_templates")
+          .insert(payload)
+          .select()
+          .single();
         if (error) throw error;
+        return data as ProposalTemplate;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["proposal-templates"] }); toast.success("Saved"); setEditing(null); },
+    onSuccess: (saved) => {
+      qc.invalidateQueries({ queryKey: ["proposal-templates"] });
+      // Keep the sheet open with the saved row (so auto-save keeps updating same id)
+      setEditing((prev) => (prev ? { ...prev, ...saved } : saved));
+    },
+    onError: (e: Error) => toast.error(`Save failed: ${e.message}`),
+  });
+
+  const delMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("proposal_templates")
+        .update({ archived: true })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["proposal-templates"] });
+      toast.success("Template removed");
+      setSheetOpen(false);
+      setEditing(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const del = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("proposal_templates").update({ archived: true }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["proposal-templates"] }); toast.success("Removed"); setEditing(null); },
-  });
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-6">
+    <div className="space-y-4">
       <Card className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="font-semibold text-sm">Templates ({templates.length})</div>
-          <Button size="sm" onClick={() => setEditing({ scope: "domestic", sections: {} })}><Plus className="h-4 w-4 mr-1" />New</Button>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="font-semibold text-sm">Proposal templates ({templates.length})</div>
+          <Button size="sm" onClick={openNew}>
+            <Plus className="h-4 w-4 mr-1" /> New template
+          </Button>
         </div>
         {isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
-        {!isLoading && templates.length === 0 && (
-          <div className="text-sm text-muted-foreground text-center py-8">
-            No templates yet. Create one to pre-fill proposal sections in a single click.
+        {error && (
+          <div className="text-sm text-destructive">Failed to load templates: {(error as Error).message}</div>
+        )}
+        {!isLoading && !error && templates.length === 0 && (
+          <div className="text-sm text-muted-foreground text-center py-8 border border-dashed rounded-md">
+            No templates yet. Click <span className="font-medium">New template</span> to create one.
           </div>
         )}
-        <div className="space-y-2">
-          {templates.map(t => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {templates.map((t) => (
             <button
               key={t.id}
-              onClick={() => setEditing(t)}
-              className={`w-full text-left rounded-md border p-3 hover:bg-secondary/50 ${editing?.id === t.id ? "border-primary bg-secondary/40" : ""}`}
+              onClick={() => openExisting(t)}
+              className="text-left rounded-md border p-3 hover:bg-secondary/50 transition-colors"
             >
-              <div className="flex items-center justify-between">
-                <div className="font-medium text-sm">{t.name}</div>
-                {t.is_default && <Star className="h-3.5 w-3.5 text-primary" />}
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-medium text-sm truncate">{t.name}</div>
+                {t.is_default && <Star className="h-3.5 w-3.5 text-primary shrink-0" />}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                {TEMPLATE_SCOPES.find(s => s.value === t.scope)?.label ?? t.scope}
-                {" · "}{Object.keys(t.sections || {}).length} section(s)
+                {TEMPLATE_SCOPES.find((s) => s.value === t.scope)?.label ?? t.scope}
+                {" · "}
+                {Object.keys(t.sections || {}).length} section(s)
               </div>
+              {t.description && (
+                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</div>
+              )}
             </button>
           ))}
         </div>
       </Card>
 
-      <Card className="p-4">
-        {!editing && <div className="text-sm text-muted-foreground text-center py-16">Select or create a template to edit.</div>}
-        {editing && (
-          <TemplateEditor
-            tpl={editing}
-            onChange={setEditing}
-            onSave={() => save.mutate(editing)}
-            onDelete={editing.id ? () => del.mutate(editing.id!) : undefined}
-            saving={save.isPending}
-          />
-        )}
-      </Card>
+      <Sheet
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) setEditing(null);
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto p-0">
+          <SheetHeader className="p-4 border-b sticky top-0 bg-background z-10">
+            <SheetTitle>{editing?.id ? "Edit template" : "New template"}</SheetTitle>
+          </SheetHeader>
+          {editing && (
+            <TemplateEditor
+              tpl={editing}
+              onChange={setEditing}
+              onSave={() => saveMut.mutate(editing)}
+              onDelete={editing.id ? () => delMut.mutate(editing.id!) : undefined}
+              saving={saveMut.isPending}
+              onClose={() => {
+                setSheetOpen(false);
+                setEditing(null);
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
 
-function TemplateEditor({ tpl, onChange, onSave, onDelete, saving }: {
+function TemplateEditor({
+  tpl,
+  onChange,
+  onSave,
+  onDelete,
+  saving,
+  onClose,
+}: {
   tpl: Partial<ProposalTemplate>;
   onChange: (t: Partial<ProposalTemplate>) => void;
   onSave: () => void;
   onDelete?: () => void;
   saving: boolean;
+  onClose: () => void;
 }) {
   const sections = tpl.sections || {};
-  const setSection = (key: string, value: string) => onChange({ ...tpl, sections: { ...sections, [key]: value } });
+  const setSection = (key: string, value: string) =>
+    onChange({ ...tpl, sections: { ...sections, [key]: value } });
+
+  const [preview, setPreview] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [autoSave, setAutoSave] = useState(true);
+  const firstRun = useRef(true);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-save debounce (only for existing templates — avoid creating dupes)
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    if (!autoSave) return;
+    if (!tpl.id) return; // don't auto-create; user hits "Save draft" first
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      onSave();
+      setLastSavedAt(new Date());
+    }, 1500);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tpl.name, tpl.scope, tpl.description, JSON.stringify(tpl.sections), tpl.is_default, autoSave]);
+
+  const handleManualSave = () => {
+    onSave();
+    setLastSavedAt(new Date());
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="font-semibold">{tpl.id ? "Edit template" : "New template"}</div>
-        <div className="flex gap-2">
-          {onDelete && <Button variant="ghost" size="sm" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>}
-          <Button size="sm" onClick={onSave} disabled={saving}><Save className="h-4 w-4 mr-1" />Save</Button>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="md:col-span-2">
-          <Label>Name</Label>
-          <Input value={tpl.name || ""} onChange={e => onChange({ ...tpl, name: e.target.value })} />
-        </div>
-        <div>
-          <Label>Scope</Label>
-          <Select value={tpl.scope || "domestic"} onValueChange={v => onChange({ ...tpl, scope: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{TEMPLATE_SCOPES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div className="md:col-span-3">
-          <Label>Description</Label>
-          <Input value={tpl.description || ""} onChange={e => onChange({ ...tpl, description: e.target.value })} placeholder="When to use this template" />
-        </div>
-        <label className="md:col-span-3 flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!tpl.is_default} onChange={e => onChange({ ...tpl, is_default: e.target.checked })} />
-          Set as default for this scope
-        </label>
-      </div>
-      <div className="space-y-3">
-        {AI_SECTIONS.map(s => (
-          <div key={s.key}>
-            <Label>{s.label}</Label>
-            <Textarea
-              rows={3}
-              value={(sections[s.key] as string) || ""}
-              onChange={e => setSection(s.key, e.target.value)}
-              placeholder={`Default content for ${s.label} — leave blank to keep AI-generated text.`}
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between gap-2 p-4 border-b flex-wrap">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {saving ? (
+            <span>Saving…</span>
+          ) : lastSavedAt ? (
+            <span>Saved {lastSavedAt.toLocaleTimeString()}</span>
+          ) : tpl.id ? (
+            <span>All changes saved</span>
+          ) : (
+            <span>Draft — not saved yet</span>
+          )}
+          <label className="flex items-center gap-1 ml-2">
+            <input
+              type="checkbox"
+              checked={autoSave}
+              onChange={(e) => setAutoSave(e.target.checked)}
             />
+            Auto-save
+          </label>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setPreview((p) => !p)}>
+            {preview ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+            {preview ? "Hide preview" : "Live preview"}
+          </Button>
+          {onDelete && (
+            <Button variant="ghost" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button size="sm" onClick={handleManualSave} disabled={saving}>
+            <Save className="h-4 w-4 mr-1" />
+            {tpl.id ? "Save" : "Save draft"}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className={preview ? "grid grid-cols-1 lg:grid-cols-2 gap-0" : ""}>
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-2">
+              <Label>Name</Label>
+              <Input
+                value={tpl.name || ""}
+                onChange={(e) => onChange({ ...tpl, name: e.target.value })}
+                placeholder="e.g. Domestic Soap Plant Proposal"
+              />
+            </div>
+            <div>
+              <Label>Scope</Label>
+              <Select value={tpl.scope || "domestic"} onValueChange={(v) => onChange({ ...tpl, scope: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_SCOPES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-3">
+              <Label>Description</Label>
+              <Input
+                value={tpl.description || ""}
+                onChange={(e) => onChange({ ...tpl, description: e.target.value })}
+                placeholder="When to use this template"
+              />
+            </div>
+            <label className="md:col-span-3 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={!!tpl.is_default}
+                onChange={(e) => onChange({ ...tpl, is_default: e.target.checked })}
+              />
+              Set as default for this scope
+            </label>
           </div>
-        ))}
+
+          <div className="space-y-3">
+            {AI_SECTIONS.map((s) => (
+              <div key={s.key}>
+                <Label>{s.label}</Label>
+                <Textarea
+                  rows={4}
+                  value={(sections[s.key] as string) || ""}
+                  onChange={(e) => setSection(s.key, e.target.value)}
+                  placeholder={`Default content for ${s.label} — leave blank to keep AI-generated text.`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {preview && (
+          <div className="p-4 border-l bg-secondary/20 overflow-y-auto max-h-[70vh]">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Live preview</div>
+            <div className="space-y-4">
+              <div>
+                <div className="text-lg font-bold">{tpl.name || "Untitled template"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {TEMPLATE_SCOPES.find((s) => s.value === tpl.scope)?.label ?? tpl.scope}
+                </div>
+                {tpl.description && (
+                  <div className="text-sm text-muted-foreground mt-1">{tpl.description}</div>
+                )}
+              </div>
+              {AI_SECTIONS.map((s) => {
+                const val = (sections[s.key] as string) || "";
+                if (!val.trim()) return null;
+                return (
+                  <div key={s.key}>
+                    <div className="font-semibold text-sm mb-1">{s.label}</div>
+                    <div className="text-sm whitespace-pre-wrap text-muted-foreground">{val}</div>
+                  </div>
+                );
+              })}
+              {AI_SECTIONS.every((s) => !((sections[s.key] as string) || "").trim()) && (
+                <div className="text-sm text-muted-foreground italic">
+                  No content yet. Sections you fill in will appear here.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
