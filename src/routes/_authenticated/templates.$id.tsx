@@ -77,28 +77,28 @@ function TemplateDetail() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/templates"><ChevronLeft className="h-4 w-4" /> Templates</Link>
           </Button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={async () => { await setDefaultTemplate(id); toast.success("Set as default"); refetch(); }}>
-            <Star className="h-4 w-4 mr-1" /> Default
+            <Star className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Default</span>
           </Button>
           <Button variant="outline" size="sm" onClick={async () => { const n = await duplicateTemplate(id); toast.success("Duplicated"); nav({ to: "/templates/$id", params: { id: n } }); }}>
-            <Copy className="h-4 w-4 mr-1" /> Duplicate
+            <Copy className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Duplicate</span>
           </Button>
           <Button variant="outline" size="sm" onClick={async () => { await archiveTemplate(id); toast.success("Archived"); nav({ to: "/templates" }); }}>
-            <Archive className="h-4 w-4 mr-1" /> Archive
+            <Archive className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Archive</span>
           </Button>
           <Button variant="outline" size="sm" className="text-destructive"
             onClick={async () => { if (confirm("Delete permanently?")) { await deleteTemplate(id); nav({ to: "/templates" }); } }}>
-            <Trash2 className="h-4 w-4 mr-1" /> Delete
+            <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Delete</span>
           </Button>
           <Button size="sm" onClick={save} disabled={!dirty}>
-            <Save className="h-4 w-4 mr-1" /> Save
+            <Save className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Save</span>
           </Button>
         </div>
       </div>
