@@ -19,7 +19,15 @@ export const Route = createFileRoute("/_authenticated/crm/quotations/new")({
   component: NewQuote,
 });
 
-type Item = { product_id: string | null; product_name: string; qty: number; unit_price: number };
+type Item = {
+  product_id: string | null;
+  product_name: string;
+  qty: number;
+  unit_price: number;
+  capacity: string;
+  motor: string;
+  moc: string;
+};
 
 function NewQuote() {
   const navigate = useNavigate();
@@ -46,7 +54,25 @@ function NewQuote() {
   const [validity, setValidity] = useState(30);
   const [gstMode, setGstMode] = useState<"cgst_sgst" | "igst" | "export">("igst");
 
-  // when a lead is picked, prefill company from lead
+  // Sales Engineer + Subject + Intro
+  const [subject, setSubject] = useState("");
+  const [introNote, setIntroNote] = useState("");
+  const [seName, setSeName] = useState("");
+  const [sePhone, setSePhone] = useState("");
+  const [seEmail, setSeEmail] = useState("");
+
+  // Prefill sales engineer with current user
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        if (!seName) setSeName((u.user.user_metadata as any)?.full_name || u.user.email?.split("@")[0] || "");
+        if (!seEmail) setSeEmail(u.user.email || "");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (leadId !== "none" && leads.data) {
       const l = leads.data.find((x: any) => x.id === leadId);
@@ -66,7 +92,7 @@ function NewQuote() {
     return { subtotal, cgst, sgst, igst, grand };
   }, [items, gstMode]);
 
-  const addItem = () => setItems(s => [...s, { product_id: null, product_name: "", qty: 1, unit_price: 0 }]);
+  const addItem = () => setItems(s => [...s, { product_id: null, product_name: "", qty: 1, unit_price: 0, capacity: "", motor: "", moc: "" }]);
   const setItem = (i: number, patch: Partial<Item>) => setItems(s => s.map((it, idx) => idx === i ? { ...it, ...patch } : it));
   const rmItem = (i: number) => setItems(s => s.filter((_, idx) => idx !== i));
   const pickProduct = (i: number, productId: string) => {
@@ -91,11 +117,17 @@ function NewQuote() {
         subtotal: totals.subtotal, tax_mode: gstMode,
         cgst: totals.cgst, sgst: totals.sgst, igst: totals.igst,
         grand_total: totals.grand, status: "Draft",
+        subject: subject || null,
+        intro_note: introNote || null,
+        sales_engineer_name: seName || null,
+        sales_engineer_phone: sePhone || null,
+        sales_engineer_email: seEmail || null,
       }).select().single();
       if (error) throw error;
       const rows = items.map(it => ({
         quotation_id: quote.id, product_id: it.product_id, product_name: it.product_name,
         qty: it.qty, unit_price: it.unit_price, line_total: it.qty * it.unit_price,
+        capacity: it.capacity || null, motor: it.motor || null, moc: it.moc || null,
       }));
       const { error: ie } = await (supabase as any).from("crm_quotation_items").insert(rows);
       if (ie) throw ie;
@@ -124,6 +156,9 @@ function NewQuote() {
               <SelectContent><SelectItem value="none">— None —</SelectItem>{(companies.data ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.company_name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div className="sm:col-span-2"><Label>Subject (shown on PDF)</Label>
+            <Input placeholder="e.g. Offer for Toilet Soap Plant — 500 Kg/hr | Semi Automatic | SS304" value={subject} onChange={e => setSubject(e.target.value)} />
+          </div>
           <div><Label>Tax Mode</Label>
             <Select value={gstMode} onValueChange={(v) => setGstMode(v as any)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -136,6 +171,18 @@ function NewQuote() {
           </div>
           <div><Label>Validity (days)</Label><Input type="number" value={validity} onChange={e => setValidity(Number(e.target.value))} /></div>
           <div className="sm:col-span-2"><Label>Payment Terms</Label><Textarea rows={2} value={payment} onChange={e => setPayment(e.target.value)} /></div>
+          <div className="sm:col-span-2"><Label>Intro / Cover Note (shown after "Dear Sir")</Label>
+            <Textarea rows={3} placeholder="Leave blank for a professional default." value={introNote} onChange={e => setIntroNote(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Sales Engineer (signature on PDF)</CardTitle></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          <div><Label>Name</Label><Input value={seName} onChange={e => setSeName(e.target.value)} /></div>
+          <div><Label>Phone</Label><Input value={sePhone} onChange={e => setSePhone(e.target.value)} placeholder="+91 …" /></div>
+          <div><Label>Email</Label><Input value={seEmail} onChange={e => setSeEmail(e.target.value)} /></div>
         </CardContent>
       </Card>
 
@@ -144,24 +191,31 @@ function NewQuote() {
           <CardTitle className="text-base">Line Items</CardTitle>
           <Button size="sm" onClick={addItem}><Plus className="h-4 w-4 mr-1" />Add Item</Button>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-3">
           {items.map((it, i) => (
-            <div key={i} className="grid gap-2 md:grid-cols-[2fr_80px_120px_120px_40px] items-end border rounded-md p-2">
-              <div>
-                <Label className="text-xs">Product</Label>
-                <Select value={it.product_id || "custom"} onValueChange={(v) => v === "custom" ? setItem(i, { product_id: null }) : pickProduct(i, v)}>
-                  <SelectTrigger><SelectValue placeholder="Pick or custom" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="custom">— Custom line —</SelectItem>
-                    {(products.data ?? []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Input className="mt-1" placeholder="Description / name" value={it.product_name} onChange={e => setItem(i, { product_name: e.target.value })} />
+            <div key={i} className="border rounded-md p-3 space-y-2">
+              <div className="grid gap-2 md:grid-cols-[2fr_80px_120px_120px_40px] items-end">
+                <div>
+                  <Label className="text-xs">Product</Label>
+                  <Select value={it.product_id || "custom"} onValueChange={(v) => v === "custom" ? setItem(i, { product_id: null }) : pickProduct(i, v)}>
+                    <SelectTrigger><SelectValue placeholder="Pick or custom" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">— Custom line —</SelectItem>
+                      {(products.data ?? []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input className="mt-1" placeholder="Description / name" value={it.product_name} onChange={e => setItem(i, { product_name: e.target.value })} />
+                </div>
+                <div><Label className="text-xs">Qty</Label><Input type="number" value={it.qty} onChange={e => setItem(i, { qty: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">Unit price</Label><Input type="number" value={it.unit_price} onChange={e => setItem(i, { unit_price: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">Amount</Label><div className="text-sm font-semibold py-2">{fmtMoney(it.qty * it.unit_price, currency)}</div></div>
+                <Button size="icon" variant="ghost" onClick={() => rmItem(i)}><Trash2 className="h-4 w-4" /></Button>
               </div>
-              <div><Label className="text-xs">Qty</Label><Input type="number" value={it.qty} onChange={e => setItem(i, { qty: Number(e.target.value) })} /></div>
-              <div><Label className="text-xs">Unit price</Label><Input type="number" value={it.unit_price} onChange={e => setItem(i, { unit_price: Number(e.target.value) })} /></div>
-              <div><Label className="text-xs">Amount</Label><div className="text-sm font-semibold py-2">{fmtMoney(it.qty * it.unit_price, currency)}</div></div>
-              <Button size="icon" variant="ghost" onClick={() => rmItem(i)}><Trash2 className="h-4 w-4" /></Button>
+              <div className="grid gap-2 md:grid-cols-3">
+                <div><Label className="text-xs">Capacity</Label><Input placeholder="e.g. 500 kg/hr" value={it.capacity} onChange={e => setItem(i, { capacity: e.target.value })} /></div>
+                <div><Label className="text-xs">Motor</Label><Input placeholder="e.g. 15 HP" value={it.motor} onChange={e => setItem(i, { motor: e.target.value })} /></div>
+                <div><Label className="text-xs">MOC</Label><Input placeholder="e.g. SS304" value={it.moc} onChange={e => setItem(i, { moc: e.target.value })} /></div>
+              </div>
             </div>
           ))}
           {items.length === 0 && <div className="text-center text-sm text-muted-foreground py-4">Add items to build the quote</div>}
