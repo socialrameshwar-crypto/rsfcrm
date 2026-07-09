@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 type NavItem = { to: string; label: string; icon: any; highlight?: boolean };
 const NAV: NavItem[] = [
+  { to: "/", label: "Home", icon: Home },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/proposals", label: "Proposals", icon: FileText },
