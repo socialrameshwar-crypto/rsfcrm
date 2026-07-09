@@ -62,6 +62,7 @@ function BlockEditor() {
   const [device, setDevice] = useState<"a4" | "desktop" | "mobile">("a4");
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const historyRef = useRef<ProposalBlock[][]>([]);
   const futureRef = useRef<ProposalBlock[][]>([]);
   const initialLoad = useRef(true);
