@@ -23,6 +23,7 @@ import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type Quot
 import { fetchCategories, fetchMachines } from "@/lib/products";
 import { fetchRules, fetchFormulas, pickBestRule, ruleToMachines, buildFormulaContext, evalFormula } from "@/lib/rules";
 import { Link } from "@tanstack/react-router";
+import { fetchTemplates } from "@/lib/templates";
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
   component: NewProposalWizard,
@@ -59,6 +60,7 @@ function NewProposalWizard() {
   const [material, setMaterial] = useState<string>("SS304");
   const [currency, setCurrency] = useState("INR");
   const [template, setTemplate] = useState("corporate-blue");
+  const [templateId, setTemplateId] = useState<string>("none");
   const [title, setTitle] = useState("");
 
   // Step 3 - machines editable
