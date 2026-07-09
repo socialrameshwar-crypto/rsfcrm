@@ -9,16 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { PRODUCT_TYPES, STATUSES, TEMPLATES } from "@/lib/proposal-catalog";
-import { generateProposalPdf, getProposalPdfBlobUrl } from "@/lib/pdf";
+import { getProposalPdfBlobUrl } from "@/lib/pdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks, LayoutTemplate } from "lucide-react";
+import { Download, ChevronLeft, Trash2, Sparkles, Eye, Loader2, Pencil, Check, X, Plus, Printer, ZoomIn, ZoomOut, Mail, Blocks, LayoutTemplate, FileText } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { EmailComposer } from "@/components/EmailComposer";
 import { ContentBlockPicker } from "@/components/ContentBlockPicker";
 import { AI_SECTIONS, fetchProposalTemplates } from "@/lib/content";
+import { getTemplate } from "@/lib/templates";
+import { fetchTemplatePdfBytes, stampPdfOverlay, pdfBytesToBlobUrl } from "@/lib/pdf-overlay";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   component: ProposalDetail,
@@ -97,6 +99,15 @@ function ProposalDetail() {
 
   const { data: pTemplates = [] } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
 
+  // Linked pixel-perfect template (if any)
+  const linkedTemplateId = (data as any)?.template_id as string | null | undefined;
+  const { data: linkedTemplate } = useQuery({
+    queryKey: ["template", linkedTemplateId],
+    enabled: !!linkedTemplateId,
+    queryFn: () => getTemplate(linkedTemplateId as string),
+  });
+  const isPdfOverlay = linkedTemplate?.mode === "pdf_overlay" && !!linkedTemplate.source_pdf_url;
+
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   const p = data;
@@ -106,6 +117,7 @@ function ProposalDetail() {
   const ai = (p.ai_content as unknown as AiProposalContent) ?? ({} as AiProposalContent);
   const cust = (p as any).customers ?? {};
   const productLabel = PRODUCT_TYPES.find(x => x.value === p.product_type)?.label ?? p.product_type;
+  const overlayValues = ((p as any).overlay_values as Record<string, string>) ?? {};
 
   const pdfInput = {
     proposal_number: p.proposal_number,
@@ -127,7 +139,28 @@ function ProposalDetail() {
     blocks: ((p as any).blocks as any[] | null) ?? undefined,
   };
 
-  const downloadPdf = () => { generateProposalPdf(pdfInput); toast.success("Downloading PDF"); };
+  /** Build a PDF blob URL, either by stamping the PDF template or via the block engine. */
+  const buildBlobUrl = async (): Promise<{ url: string; filename: string }> => {
+    if (isPdfOverlay && linkedTemplate?.source_pdf_url) {
+      const bytes = await fetchTemplatePdfBytes(linkedTemplate.source_pdf_url);
+      const stamped = await stampPdfOverlay(bytes, linkedTemplate.overlays ?? [], overlayValues);
+      return {
+        url: pdfBytesToBlobUrl(stamped),
+        filename: `${p.proposal_number.replace(/\//g, "_")}.pdf`,
+      };
+    }
+    return await getProposalPdfBlobUrl(pdfInput);
+  };
+
+  const downloadPdf = async () => {
+    try {
+      const { url, filename } = await buildBlobUrl();
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast.success("Downloading PDF");
+    } catch (e: any) { toast.error(e?.message || "Failed to build PDF"); }
+  };
   const printPdf = () => {
     if (!previewUrl) return openPreview();
     const w = window.open(previewUrl, "_blank");
@@ -139,7 +172,7 @@ function ProposalDetail() {
     setPreviewLoading(true);
     try {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
-      const { url } = await getProposalPdfBlobUrl(pdfInput);
+      const { url } = await buildBlobUrl();
       setPreviewUrl(url);
     } catch (e: any) {
       toast.error(e?.message || "Failed to generate preview");
@@ -207,6 +240,35 @@ function ProposalDetail() {
           <Button onClick={() => setDownloadOpen(true)} className="gradient-primary"><Download className="h-4 w-4 mr-1" /> Download</Button>
         </div>
       </div>
+
+      {isPdfOverlay && linkedTemplate && (
+        <Card className="p-4 space-y-3 border-primary/40">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            <div className="font-semibold text-sm">Pixel-perfect template: {linkedTemplate.name}</div>
+            <Badge variant="secondary">{(linkedTemplate.overlays || []).length} fields</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            These values are stamped over the original PDF. Everything else in the PDF is
+            preserved exactly as designed.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(linkedTemplate.overlays || []).map(f => (
+              <div key={f.id}>
+                <label className="text-[10px] uppercase text-muted-foreground">{f.label} <span className="font-mono normal-case">{`{{${f.token}}}`}</span> · p{f.page}</label>
+                <Input
+                  defaultValue={overlayValues[f.token] ?? f.defaultValue ?? ""}
+                  onBlur={e => {
+                    const next = { ...overlayValues, [f.token]: e.target.value };
+                    patch.mutate({ overlay_values: next as any });
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
 
       {/* Preview modal */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
