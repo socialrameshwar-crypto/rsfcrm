@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronUp, ChevronDown, Copy, Trash2, Eye, EyeOff, Plus,
-  Save, Undo2, Redo2, Monitor, Smartphone, FileText as A4Icon, Check,
+  Save, Undo2, Redo2, Monitor, Smartphone, FileText as A4Icon, Check, Sparkles,
 } from "lucide-react";
 import {
   defaultBlocks, makeBlock, BLOCK_LABEL, AI_SECTION_KEYS,
@@ -22,6 +22,7 @@ import type { AiProposalContent } from "@/lib/ai.functions";
 import type { Machine, Utilities, Commercials } from "@/lib/proposal-catalog";
 import { BlockPreview } from "@/components/BlockPreview";
 import { PRODUCT_TYPES } from "@/lib/proposal-catalog";
+import { TemplateImportDialog } from "@/components/TemplateImportDialog";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id/edit")({
   component: BlockEditor,
@@ -61,6 +62,7 @@ function BlockEditor() {
   const [device, setDevice] = useState<"a4" | "desktop" | "mobile">("a4");
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const historyRef = useRef<ProposalBlock[][]>([]);
   const futureRef = useRef<ProposalBlock[][]>([]);
   const initialLoad = useRef(true);
@@ -159,6 +161,16 @@ function BlockEditor() {
     setSaved(false);
   };
 
+  const applyImport = (imported: ProposalBlock[], importedAi: Partial<AiProposalContent>, mode: "replace" | "append") => {
+    const nextBlocks = mode === "replace" ? imported : [...blocks, ...imported];
+    commit(nextBlocks);
+    if (Object.keys(importedAi).length) {
+      setAi(a => ({ ...a, ...importedAi }));
+      setSaved(false);
+    }
+  };
+
+
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading editor…</div>;
 
   const p = data as any;
@@ -179,6 +191,10 @@ function BlockEditor() {
           <Button variant={device === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("desktop")}><Monitor className="h-3.5 w-3.5 mr-1" />Desktop</Button>
           <Button variant={device === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("mobile")}><Smartphone className="h-3.5 w-3.5 mr-1" />Mobile</Button>
         </div>
+        <div className="mx-2 h-6 w-px bg-border" />
+        <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+          <Sparkles className="h-3.5 w-3.5 mr-1" /> Import template
+        </Button>
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           {saving ? <>Saving…</> : saved ? <><Check className="h-3.5 w-3.5 text-success" /> Saved</> : <>Unsaved</>}
           <Button size="sm" onClick={() => patch.mutate({ blocks, ai })} disabled={saved || saving} className="gradient-primary">
@@ -264,6 +280,8 @@ function BlockEditor() {
           )}
         </div>
       </div>
+
+      <TemplateImportDialog open={importOpen} onOpenChange={setImportOpen} onApply={applyImport} />
     </div>
   );
 }
