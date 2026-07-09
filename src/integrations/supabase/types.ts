@@ -68,6 +68,54 @@ export type Database = {
         }
         Relationships: []
       }
+      machine_selection_rules: {
+        Row: {
+          archived: boolean
+          automation: string | null
+          capacity: string | null
+          created_at: string
+          id: string
+          items: Json
+          material: string | null
+          name: string
+          notes: string | null
+          priority: number
+          product_slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          automation?: string | null
+          capacity?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          material?: string | null
+          name: string
+          notes?: string | null
+          priority?: number
+          product_slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          automation?: string | null
+          capacity?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          material?: string | null
+          name?: string
+          notes?: string | null
+          priority?: number
+          product_slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       machines: {
         Row: {
           applications: string[]
@@ -375,6 +423,48 @@ export type Database = {
           name?: string
           scope?: string
           sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      utility_formulas: {
+        Row: {
+          archived: boolean
+          created_at: string
+          expression: string
+          id: string
+          key: string
+          label: string
+          product_slug: string | null
+          sort_order: number
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          expression: string
+          id?: string
+          key: string
+          label: string
+          product_slug?: string | null
+          sort_order?: number
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          expression?: string
+          id?: string
+          key?: string
+          label?: string
+          product_slug?: string | null
+          sort_order?: number
+          unit?: string | null
           updated_at?: string
           user_id?: string
         }
