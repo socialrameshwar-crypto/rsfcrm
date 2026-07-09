@@ -11,9 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronUp, ChevronDown, Copy, Trash2, Eye, EyeOff, Plus,
-  Save, Check, Archive, ArchiveRestore, Monitor, Smartphone, FileText as A4Icon,
+  Save, Check, Archive, ArchiveRestore, Monitor, Smartphone, FileText as A4Icon, FileText,
 } from "lucide-react";
 import { BlockPreview } from "@/components/BlockPreview";
+import { PdfOverlayEditor } from "@/components/PdfOverlayEditor";
 import {
   makeBlock, BLOCK_LABEL, AI_SECTION_KEYS,
   type ProposalBlock, type BlockType,
@@ -23,6 +24,7 @@ import type { Machine, Commercials } from "@/lib/proposal-catalog";
 import {
   getTemplate, updateTemplate, duplicateTemplate, deleteTemplate, TEMPLATE_CATEGORIES,
 } from "@/lib/templates";
+import type { OverlayField } from "@/lib/pdf-overlay";
 
 export const Route = createFileRoute("/_authenticated/templates/$id")({
   component: TemplateEditor,
@@ -42,6 +44,7 @@ function TemplateEditor() {
 
   const [blocks, setBlocks] = useState<ProposalBlock[]>([]);
   const [ai, setAi] = useState<Partial<AiProposalContent>>({});
+  const [overlays, setOverlays] = useState<OverlayField[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("general");
@@ -57,6 +60,7 @@ function TemplateEditor() {
     initialLoad.current = false;
     setBlocks((data.blocks && data.blocks.length ? data.blocks : []) as ProposalBlock[]);
     setAi((data.ai_content || {}) as Partial<AiProposalContent>);
+    setOverlays((data.overlays || []) as OverlayField[]);
     setName(data.name);
     setDescription(data.description || "");
     setCategory(data.category || "general");
@@ -75,6 +79,7 @@ function TemplateEditor() {
         tags: tagsRaw.split(",").map(s => s.trim()).filter(Boolean),
         blocks,
         ai_content: ai,
+        overlays,
       } as any);
     },
     onSuccess: () => { setSaving(false); setSaved(true); qc.invalidateQueries({ queryKey: ["template", id] }); qc.invalidateQueries({ queryKey: ["templates"] }); },
@@ -87,7 +92,7 @@ function TemplateEditor() {
     const t = setTimeout(() => patch.mutate(), 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks, ai, name, description, category, tagsRaw, saved]);
+  }, [blocks, ai, overlays, name, description, category, tagsRaw, saved]);
 
   // Block ops
   const move = (idx: number, dir: -1 | 1) => {
@@ -134,6 +139,7 @@ function TemplateEditor() {
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading template…</div>;
 
   const selected = blocks.find(b => b.id === selectedId);
+  const isPdfMode = data.mode === "pdf_overlay" && data.source_pdf_url;
 
   return (
     <div className="fixed inset-0 lg:left-64 top-16 bg-muted/30 flex flex-col">
@@ -141,12 +147,19 @@ function TemplateEditor() {
       <div className="h-12 border-b bg-background flex items-center gap-2 px-3">
         <Button variant="ghost" size="sm" asChild><Link to="/templates"><ChevronLeft className="h-4 w-4 mr-1" />Library</Link></Button>
         <div className="text-sm font-semibold truncate">{name || "Untitled"}</div>
-        <div className="mx-2 h-6 w-px bg-border" />
-        <div className="flex items-center gap-1 rounded-md border p-0.5">
-          <Button variant={device === "a4" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("a4")}><A4Icon className="h-3.5 w-3.5 mr-1" />A4</Button>
-          <Button variant={device === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("desktop")}><Monitor className="h-3.5 w-3.5 mr-1" />Desktop</Button>
-          <Button variant={device === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("mobile")}><Smartphone className="h-3.5 w-3.5 mr-1" />Mobile</Button>
+        <div className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary">
+          {isPdfMode ? "Pixel-perfect PDF" : "Block layout"}
         </div>
+        {!isPdfMode && (
+          <>
+            <div className="mx-2 h-6 w-px bg-border" />
+            <div className="flex items-center gap-1 rounded-md border p-0.5">
+              <Button variant={device === "a4" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("a4")}><A4Icon className="h-3.5 w-3.5 mr-1" />A4</Button>
+              <Button variant={device === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("desktop")}><Monitor className="h-3.5 w-3.5 mr-1" />Desktop</Button>
+              <Button variant={device === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("mobile")}><Smartphone className="h-3.5 w-3.5 mr-1" />Mobile</Button>
+            </div>
+          </>
+        )}
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           {saving ? <>Saving…</> : saved ? <><Check className="h-3.5 w-3.5 text-success" /> Saved</> : <>Unsaved</>}
           <Button size="sm" variant="outline" onClick={() => dup.mutate()}><Copy className="h-3.5 w-3.5 mr-1" /> Duplicate</Button>
@@ -163,10 +176,9 @@ function TemplateEditor() {
       </div>
 
       {/* Body */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[300px_1fr_320px] min-h-0">
-        {/* Left */}
-        <div className="border-r bg-background overflow-y-auto min-h-0">
-          <div className="p-3 border-b space-y-2">
+      {isPdfMode ? (
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-0">
+          <div className="border-r bg-background overflow-y-auto min-h-0 p-3 space-y-2">
             <div>
               <Label className="text-[10px] uppercase">Name</Label>
               <Input value={name} onChange={e => { setName(e.target.value); dirty(); }} />
@@ -184,83 +196,127 @@ function TemplateEditor() {
             </div>
             <div>
               <Label className="text-[10px] uppercase">Description</Label>
-              <Textarea rows={2} value={description} onChange={e => { setDescription(e.target.value); dirty(); }} />
+              <Textarea rows={3} value={description} onChange={e => { setDescription(e.target.value); dirty(); }} />
+            </div>
+            <div className="pt-3 mt-3 border-t space-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 font-medium text-foreground"><FileText className="h-3.5 w-3.5" /> Source PDF</div>
+              <div>{data.source_pdf_pages ?? "?"} pages</div>
+              <p className="text-[11px] leading-snug pt-1">
+                The uploaded PDF is used as the visual layer. Place fields on it
+                for values that should change per proposal (customer name, price,
+                date, etc.). Everything else stays exactly as designed.
+              </p>
             </div>
           </div>
-          <div className="p-3 border-b">
-            <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Add block</div>
-            <div className="grid grid-cols-2 gap-1">
-              {ADDABLE.map(t => (
-                <Button key={t} variant="outline" size="sm" className="justify-start h-8 text-xs" onClick={() => add(t)}>
-                  <Plus className="h-3 w-3 mr-1" />{BLOCK_LABEL[t]}
-                </Button>
+          <div className="p-3 overflow-hidden min-h-0">
+            <PdfOverlayEditor
+              storagePath={data.source_pdf_url!}
+              totalPages={data.source_pdf_pages ?? 1}
+              overlays={overlays}
+              onChange={next => { setOverlays(next); dirty(); }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[300px_1fr_320px] min-h-0">
+          {/* Left */}
+          <div className="border-r bg-background overflow-y-auto min-h-0">
+            <div className="p-3 border-b space-y-2">
+              <div>
+                <Label className="text-[10px] uppercase">Name</Label>
+                <Input value={name} onChange={e => { setName(e.target.value); dirty(); }} />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase">Category</Label>
+                <Select value={category} onValueChange={v => { setCategory(v); dirty(); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TEMPLATE_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase">Tags</Label>
+                <Input value={tagsRaw} onChange={e => { setTagsRaw(e.target.value); dirty(); }} placeholder="comma, separated" />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase">Description</Label>
+                <Textarea rows={2} value={description} onChange={e => { setDescription(e.target.value); dirty(); }} />
+              </div>
+            </div>
+            <div className="p-3 border-b">
+              <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Add block</div>
+              <div className="grid grid-cols-2 gap-1">
+                {ADDABLE.map(t => (
+                  <Button key={t} variant="outline" size="sm" className="justify-start h-8 text-xs" onClick={() => add(t)}>
+                    <Plus className="h-3 w-3 mr-1" />{BLOCK_LABEL[t]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="p-2 space-y-1">
+              <div className="text-xs font-semibold uppercase text-muted-foreground px-1 py-1">Outline ({blocks.length})</div>
+              {blocks.length === 0 && <div className="text-xs text-muted-foreground px-1">No blocks. Add one above.</div>}
+              {blocks.map((b, i) => (
+                <div
+                  key={b.id}
+                  className={`group flex items-center gap-1 rounded-md border p-1.5 hover:bg-secondary/50 cursor-pointer ${selectedId === b.id ? "border-primary bg-secondary/40" : ""} ${!b.visible ? "opacity-50" : ""}`}
+                  onClick={() => setSelectedId(b.id)}
+                >
+                  <div className="flex flex-col">
+                    <button className="hover:text-primary" onClick={e => { e.stopPropagation(); move(i, -1); }}><ChevronUp className="h-3 w-3" /></button>
+                    <button className="hover:text-primary" onClick={e => { e.stopPropagation(); move(i, 1); }}><ChevronDown className="h-3 w-3" /></button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate">{b.heading || BLOCK_LABEL[b.type]}</div>
+                    <div className="text-[10px] text-muted-foreground">{BLOCK_LABEL[b.type]}</div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 flex items-center">
+                    <button className="p-0.5 hover:text-primary" onClick={e => { e.stopPropagation(); toggleVisible(i); }}>
+                      {b.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    </button>
+                    <button className="p-0.5 hover:text-primary" onClick={e => { e.stopPropagation(); duplicate(i); }}><Copy className="h-3.5 w-3.5" /></button>
+                    <button className="p-0.5 hover:text-destructive" onClick={e => { e.stopPropagation(); remove(i); }}><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-          <div className="p-2 space-y-1">
-            <div className="text-xs font-semibold uppercase text-muted-foreground px-1 py-1">Outline ({blocks.length})</div>
-            {blocks.length === 0 && <div className="text-xs text-muted-foreground px-1">No blocks. Add one above.</div>}
-            {blocks.map((b, i) => (
-              <div
-                key={b.id}
-                className={`group flex items-center gap-1 rounded-md border p-1.5 hover:bg-secondary/50 cursor-pointer ${selectedId === b.id ? "border-primary bg-secondary/40" : ""} ${!b.visible ? "opacity-50" : ""}`}
-                onClick={() => setSelectedId(b.id)}
-              >
-                <div className="flex flex-col">
-                  <button className="hover:text-primary" onClick={e => { e.stopPropagation(); move(i, -1); }}><ChevronUp className="h-3 w-3" /></button>
-                  <button className="hover:text-primary" onClick={e => { e.stopPropagation(); move(i, 1); }}><ChevronDown className="h-3 w-3" /></button>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate">{b.heading || BLOCK_LABEL[b.type]}</div>
-                  <div className="text-[10px] text-muted-foreground">{BLOCK_LABEL[b.type]}</div>
-                </div>
-                <div className="opacity-0 group-hover:opacity-100 flex items-center">
-                  <button className="p-0.5 hover:text-primary" onClick={e => { e.stopPropagation(); toggleVisible(i); }}>
-                    {b.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  </button>
-                  <button className="p-0.5 hover:text-primary" onClick={e => { e.stopPropagation(); duplicate(i); }}><Copy className="h-3.5 w-3.5" /></button>
-                  <button className="p-0.5 hover:text-destructive" onClick={e => { e.stopPropagation(); remove(i); }}><Trash2 className="h-3.5 w-3.5" /></button>
-                </div>
-              </div>
-            ))}
+
+          {/* Center preview */}
+          <div className="overflow-y-auto min-h-0 py-6 px-3 bg-muted/50">
+            <BlockPreview
+              blocks={blocks}
+              ai={ai as AiProposalContent}
+              machines={[] as Machine[]}
+              utilities={{}}
+              commercials={{} as Commercials}
+              currency="INR"
+              customer={{ company_name: "Sample Customer Pvt Ltd", country: "India" }}
+              productLabel="Sample Product"
+              proposalNumber="TEMPLATE-PREVIEW"
+              title={name || "Template preview"}
+              capacity="—"
+              automation="—"
+              material="—"
+              createdAt={data.created_at}
+              terms={[]}
+              device={device}
+            />
+          </div>
+
+          {/* Right inspector */}
+          <div className="border-l bg-background overflow-y-auto min-h-0 p-4">
+            {!selected && <div className="text-sm text-muted-foreground text-center py-16">Select a block to edit its content.</div>}
+            {selected && (
+              <Inspector
+                block={selected}
+                onChange={p => update(blocks.findIndex(b => b.id === selected.id), p)}
+                ai={ai as AiProposalContent}
+                onAiChange={updateAi}
+              />
+            )}
           </div>
         </div>
-
-        {/* Center preview */}
-        <div className="overflow-y-auto min-h-0 py-6 px-3 bg-muted/50">
-          <BlockPreview
-            blocks={blocks}
-            ai={ai as AiProposalContent}
-            machines={[] as Machine[]}
-            utilities={{}}
-            commercials={{} as Commercials}
-            currency="INR"
-            customer={{ company_name: "Sample Customer Pvt Ltd", country: "India" }}
-            productLabel="Sample Product"
-            proposalNumber="TEMPLATE-PREVIEW"
-            title={name || "Template preview"}
-            capacity="—"
-            automation="—"
-            material="—"
-            createdAt={data.created_at}
-            terms={[]}
-            device={device}
-          />
-        </div>
-
-        {/* Right inspector */}
-        <div className="border-l bg-background overflow-y-auto min-h-0 p-4">
-          {!selected && <div className="text-sm text-muted-foreground text-center py-16">Select a block to edit its content.</div>}
-          {selected && (
-            <Inspector
-              block={selected}
-              onChange={p => update(blocks.findIndex(b => b.id === selected.id), p)}
-              ai={ai as AiProposalContent}
-              onAiChange={updateAi}
-            />
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

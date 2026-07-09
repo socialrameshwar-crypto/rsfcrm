@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
-  Plus, Search, Sparkles, FileText, Copy, Trash2, Archive, ArchiveRestore, Pencil, MoreVertical, Loader2, Upload,
+  Plus, Search, Sparkles, FileText, Copy, Trash2, Archive, ArchiveRestore, Pencil, MoreVertical, Loader2, Upload, FileType,
 } from "lucide-react";
 import {
   fetchTemplates, createTemplate, deleteTemplate, duplicateTemplate, updateTemplate,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/templates";
 import { defaultBlocks } from "@/lib/blocks";
 import { importTemplate } from "@/lib/template-import.functions";
+import { uploadTemplatePdf } from "@/lib/pdf-overlay";
 
 export const Route = createFileRoute("/_authenticated/templates/")({
   component: TemplateManager,
@@ -40,6 +41,7 @@ function TemplateManager() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["templates", showArchived],
@@ -84,7 +86,10 @@ function TemplateManager() {
           <h1 className="text-2xl font-bold tracking-tight">Template Manager</h1>
           <p className="text-sm text-muted-foreground">Reusable proposal layouts — build from scratch or import an existing document with AI.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setPdfOpen(true)}>
+            <FileType className="h-4 w-4 mr-1" /> Pixel-perfect PDF
+          </Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Sparkles className="h-4 w-4 mr-1" /> Import with AI
           </Button>
@@ -201,7 +206,96 @@ function TemplateManager() {
         runImport={runImport}
         onCreated={(t) => { setImportOpen(false); invalidate(); navigate({ to: "/templates/$id", params: { id: t.id } }); }}
       />
+      <PdfPerfectDialog
+        open={pdfOpen}
+        onOpenChange={setPdfOpen}
+        onCreated={(t) => { setPdfOpen(false); invalidate(); navigate({ to: "/templates/$id", params: { id: t.id } }); }}
+      />
     </div>
+  );
+}
+
+/* ------- Pixel-perfect PDF dialog ------- */
+function PdfPerfectDialog({ open, onOpenChange, onCreated }: {
+  open: boolean; onOpenChange: (v: boolean) => void; onCreated: (t: Template) => void;
+}) {
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<string>("general");
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => { setName(""); setCategory("general"); setFile(null); setBusy(false); };
+
+  const submit = async () => {
+    if (!name.trim()) { toast.error("Give the template a name"); return; }
+    if (!file) { toast.error("Upload a PDF file"); return; }
+    if (file.type !== "application/pdf") { toast.error("Only PDF files are supported for pixel-perfect mode"); return; }
+    if (file.size > 25 * 1024 * 1024) { toast.error("PDF must be under 25 MB"); return; }
+    setBusy(true);
+    try {
+      const uploaded = await uploadTemplatePdf(file);
+      const t = await createTemplate({
+        name: name.trim(),
+        category,
+        mode: "pdf_overlay",
+        source_pdf_url: uploaded.storagePath,
+        source_pdf_pages: uploaded.pages,
+        overlays: [],
+        description: `Pixel-perfect template from ${file.name} (${uploaded.pages} pages)`,
+      });
+      toast.success("PDF template created");
+      reset();
+      onCreated(t);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to create template");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileType className="h-4 w-4" /> Pixel-perfect PDF template
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="rounded-md border bg-secondary/40 p-3 text-xs leading-relaxed">
+            <div className="font-semibold text-sm mb-1">How this works</div>
+            The uploaded PDF becomes the visual layer of the template — <b>looks identical
+            to the original</b> because it <i>is</i> the original. You then draw boxes over
+            the areas that should change per proposal (customer name, price, date, etc.)
+            and give each a token like <code className="font-mono">{"{{customer_name}}"}</code>.
+            When a proposal uses the template, only those tokens are replaced. Everything
+            else — fonts, tables, images, branding, layout — is preserved exactly.
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Template name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Standard Quotation v3" /></div>
+            <div>
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Source PDF *</Label>
+            <Input type="file" accept="application/pdf" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+            {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {(file.size/1024).toFixed(0)} KB</p>}
+            <p className="text-[11px] text-muted-foreground mt-1">PDF only, up to 25 MB. Text-based PDFs work best — scanned images work too but text under boxes won't be removed automatically.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>
+          <Button className="gradient-primary" onClick={submit} disabled={busy}>
+            {busy ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Uploading…</> : <><Upload className="h-4 w-4 mr-1" /> Upload & configure</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

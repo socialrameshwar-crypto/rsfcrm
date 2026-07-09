@@ -317,9 +317,13 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean
+          mode: string
           name: string
+          overlays: Json
           scope: string
           sections: Json
+          source_pdf_pages: number | null
+          source_pdf_url: string | null
           tags: string[]
           thumbnail_url: string | null
           updated_at: string
@@ -334,9 +338,13 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean
+          mode?: string
           name: string
+          overlays?: Json
           scope?: string
           sections?: Json
+          source_pdf_pages?: number | null
+          source_pdf_url?: string | null
           tags?: string[]
           thumbnail_url?: string | null
           updated_at?: string
@@ -351,9 +359,13 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean
+          mode?: string
           name?: string
+          overlays?: Json
           scope?: string
           sections?: Json
+          source_pdf_pages?: number | null
+          source_pdf_url?: string | null
           tags?: string[]
           thumbnail_url?: string | null
           updated_at?: string
@@ -375,12 +387,14 @@ export type Database = {
           id: string
           machines: Json
           material: string
+          overlay_values: Json
           product_type: string
           proposal_number: string
           quotation_type: string
           sales_engineer: string | null
           status: string
           template: string
+          template_id: string | null
           terms_template_id: string | null
           title: string
           total_value: number
@@ -401,12 +415,14 @@ export type Database = {
           id?: string
           machines?: Json
           material: string
+          overlay_values?: Json
           product_type: string
           proposal_number: string
           quotation_type?: string
           sales_engineer?: string | null
           status?: string
           template?: string
+          template_id?: string | null
           terms_template_id?: string | null
           title: string
           total_value?: number
@@ -427,12 +443,14 @@ export type Database = {
           id?: string
           machines?: Json
           material?: string
+          overlay_values?: Json
           product_type?: string
           proposal_number?: string
           quotation_type?: string
           sales_engineer?: string | null
           status?: string
           template?: string
+          template_id?: string | null
           terms_template_id?: string | null
           title?: string
           total_value?: number
