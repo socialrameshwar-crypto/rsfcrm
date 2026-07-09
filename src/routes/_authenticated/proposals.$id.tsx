@@ -128,18 +128,10 @@ function ProposalDetail() {
     blocks: ((p as any).blocks as any[] | null) ?? undefined,
   };
 
-  /** Build a PDF blob URL, either by stamping the PDF template or via the block engine. */
   const buildBlobUrl = async (): Promise<{ url: string; filename: string }> => {
-    if (isPdfOverlay && linkedTemplate?.source_pdf_url) {
-      const bytes = await fetchTemplatePdfBytes(linkedTemplate.source_pdf_url);
-      const stamped = await stampPdfOverlay(bytes, linkedTemplate.overlays ?? [], overlayValues);
-      return {
-        url: pdfBytesToBlobUrl(stamped),
-        filename: `${p.proposal_number.replace(/\//g, "_")}.pdf`,
-      };
-    }
     return await getProposalPdfBlobUrl(pdfInput);
   };
+
 
   const downloadPdf = async () => {
     try {
