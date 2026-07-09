@@ -422,10 +422,18 @@ function NewProposalWizard() {
                 <SelectContent>
                   <SelectItem value="none">Blank — no template</SelectItem>
                   {proposalTemplates.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name} · {t.category}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.mode === "pdf_overlay" ? "📄 " : ""}{t.name} · {t.category}
+                      {t.mode === "pdf_overlay" ? " · pixel-perfect" : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedTemplate?.mode === "pdf_overlay" && (
+                <p className="text-[11px] text-primary mt-1">
+                  Pixel-perfect template — the proposal will render on the uploaded PDF layout with your values overlaid.
+                </p>
+              )}
               {proposalTemplates.length === 0 && (
                 <p className="text-[11px] text-muted-foreground mt-1">
                   No templates yet. <Link to="/templates" className="text-primary underline">Create one in Template Manager</Link>.
