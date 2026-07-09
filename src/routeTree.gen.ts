@@ -14,7 +14,10 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
+import { Route as AuthenticatedTemplatesIndexRouteImport } from './routes/_authenticated/templates.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
+import { Route as AuthenticatedTemplatesNewRouteImport } from './routes/_authenticated/templates.new'
+import { Route as AuthenticatedTemplatesIdRouteImport } from './routes/_authenticated/templates.$id'
 import { Route as AuthenticatedSettingsTermsRouteImport } from './routes/_authenticated/settings.terms'
 import { Route as AuthenticatedSettingsRulesRouteImport } from './routes/_authenticated/settings.rules'
 import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
@@ -47,10 +50,28 @@ const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTemplatesIndexRoute =
+  AuthenticatedTemplatesIndexRouteImport.update({
+    id: '/templates/',
+    path: '/templates/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProposalsIndexRoute =
   AuthenticatedProposalsIndexRouteImport.update({
     id: '/proposals/',
     path: '/proposals/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplatesNewRoute =
+  AuthenticatedTemplatesNewRouteImport.update({
+    id: '/templates/new',
+    path: '/templates/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTemplatesIdRoute =
+  AuthenticatedTemplatesIdRouteImport.update({
+    id: '/templates/$id',
+    path: '/templates/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsTermsRoute =
@@ -107,7 +128,10 @@ export interface FileRoutesByFullPath {
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/rules': typeof AuthenticatedSettingsRulesRoute
   '/settings/terms': typeof AuthenticatedSettingsTermsRoute
+  '/templates/$id': typeof AuthenticatedTemplatesIdRoute
+  '/templates/new': typeof AuthenticatedTemplatesNewRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
+  '/templates/': typeof AuthenticatedTemplatesIndexRoute
   '/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -121,7 +145,10 @@ export interface FileRoutesByTo {
   '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/rules': typeof AuthenticatedSettingsRulesRoute
   '/settings/terms': typeof AuthenticatedSettingsTermsRoute
+  '/templates/$id': typeof AuthenticatedTemplatesIdRoute
+  '/templates/new': typeof AuthenticatedTemplatesNewRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
+  '/templates': typeof AuthenticatedTemplatesIndexRoute
   '/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
 }
 export interface FileRoutesById {
@@ -137,7 +164,10 @@ export interface FileRoutesById {
   '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/_authenticated/settings/rules': typeof AuthenticatedSettingsRulesRoute
   '/_authenticated/settings/terms': typeof AuthenticatedSettingsTermsRoute
+  '/_authenticated/templates/$id': typeof AuthenticatedTemplatesIdRoute
+  '/_authenticated/templates/new': typeof AuthenticatedTemplatesNewRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
+  '/_authenticated/templates/': typeof AuthenticatedTemplatesIndexRoute
   '/_authenticated/proposals/$id/edit': typeof AuthenticatedProposalsIdEditRoute
 }
 export interface FileRouteTypes {
@@ -153,7 +183,10 @@ export interface FileRouteTypes {
     | '/settings/products'
     | '/settings/rules'
     | '/settings/terms'
+    | '/templates/$id'
+    | '/templates/new'
     | '/proposals/'
+    | '/templates/'
     | '/proposals/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -167,7 +200,10 @@ export interface FileRouteTypes {
     | '/settings/products'
     | '/settings/rules'
     | '/settings/terms'
+    | '/templates/$id'
+    | '/templates/new'
     | '/proposals'
+    | '/templates'
     | '/proposals/$id/edit'
   id:
     | '__root__'
@@ -182,7 +218,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/products'
     | '/_authenticated/settings/rules'
     | '/_authenticated/settings/terms'
+    | '/_authenticated/templates/$id'
+    | '/_authenticated/templates/new'
     | '/_authenticated/proposals/'
+    | '/_authenticated/templates/'
     | '/_authenticated/proposals/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -229,11 +268,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/templates/': {
+      id: '/_authenticated/templates/'
+      path: '/templates'
+      fullPath: '/templates/'
+      preLoaderRoute: typeof AuthenticatedTemplatesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/proposals/': {
       id: '/_authenticated/proposals/'
       path: '/proposals'
       fullPath: '/proposals/'
       preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/templates/new': {
+      id: '/_authenticated/templates/new'
+      path: '/templates/new'
+      fullPath: '/templates/new'
+      preLoaderRoute: typeof AuthenticatedTemplatesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/templates/$id': {
+      id: '/_authenticated/templates/$id'
+      path: '/templates/$id'
+      fullPath: '/templates/$id'
+      preLoaderRoute: typeof AuthenticatedTemplatesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/terms': {
@@ -311,7 +371,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
   AuthenticatedSettingsRulesRoute: typeof AuthenticatedSettingsRulesRoute
   AuthenticatedSettingsTermsRoute: typeof AuthenticatedSettingsTermsRoute
+  AuthenticatedTemplatesIdRoute: typeof AuthenticatedTemplatesIdRoute
+  AuthenticatedTemplatesNewRoute: typeof AuthenticatedTemplatesNewRoute
   AuthenticatedProposalsIndexRoute: typeof AuthenticatedProposalsIndexRoute
+  AuthenticatedTemplatesIndexRoute: typeof AuthenticatedTemplatesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -323,7 +386,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
   AuthenticatedSettingsRulesRoute: AuthenticatedSettingsRulesRoute,
   AuthenticatedSettingsTermsRoute: AuthenticatedSettingsTermsRoute,
+  AuthenticatedTemplatesIdRoute: AuthenticatedTemplatesIdRoute,
+  AuthenticatedTemplatesNewRoute: AuthenticatedTemplatesNewRoute,
   AuthenticatedProposalsIndexRoute: AuthenticatedProposalsIndexRoute,
+  AuthenticatedTemplatesIndexRoute: AuthenticatedTemplatesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
