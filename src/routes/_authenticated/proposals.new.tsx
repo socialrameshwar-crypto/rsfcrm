@@ -366,9 +366,55 @@ function NewProposalWizard() {
         <Card className="p-6 shadow-elegant space-y-6">
           <div>
             <h2 className="font-semibold text-lg">Project information</h2>
-            <p className="text-sm text-muted-foreground">Configure the plant scope.</p>
+            <p className="text-sm text-muted-foreground">Pick a template from your Template Manager, then configure the plant scope.</p>
           </div>
-          <div>
+
+          {/* Template Gallery — pick a saved template first */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">Choose a template</Label>
+              <Link to="/templates" className="text-xs text-primary hover:underline">Manage templates →</Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setTemplateId("none")}
+                className={`text-left rounded-lg border-2 p-3 transition ${templateId === "none" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+              >
+                <div className="text-sm font-medium">Blank</div>
+                <div className="text-[11px] text-muted-foreground mt-1">Start from scratch — AI generates content.</div>
+              </button>
+              {proposalTemplates.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTemplateId(t.id)}
+                  className={`text-left rounded-lg border-2 p-3 transition ${templateId === t.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                >
+                  <div className="flex items-center gap-1.5 text-sm font-medium">
+                    {t.mode === "pdf_overlay" && <span title="Pixel-perfect PDF">📄</span>}
+                    <span className="truncate">{t.name}</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-1 capitalize">
+                    {t.category}{t.mode === "pdf_overlay" ? " · pixel-perfect" : " · blocks"}
+                  </div>
+                  {t.description && <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{t.description}</div>}
+                </button>
+              ))}
+            </div>
+            {proposalTemplates.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No saved templates yet. <Link to="/templates" className="text-primary underline">Create one in Template Manager</Link> and it will appear here.
+              </p>
+            )}
+            {selectedTemplate?.mode === "pdf_overlay" && (
+              <p className="text-[11px] text-primary">
+                Pixel-perfect template selected — proposal will render on the uploaded PDF with your values overlaid.
+              </p>
+            )}
+          </div>
+
+          <div className="pt-4 border-t">
             <Label>Proposal title</Label>
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={`${productLabel} — ${capacity}`} />
           </div>
