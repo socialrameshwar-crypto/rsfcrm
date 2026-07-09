@@ -99,6 +99,11 @@ function NewProposalWizard() {
       return fetchTemplates();
     },
   });
+  const { data: libraryCategories = [] } = useQuery({
+    queryKey: ["product-categories"],
+    queryFn: fetchCategories,
+  });
+
   const [quotationType, setQuotationType] = useState<QuotationType>("domestic");
   const [modeAutoSet, setModeAutoSet] = useState(false);
   const [termsTemplateId, setTermsTemplateId] = useState<string>("");
