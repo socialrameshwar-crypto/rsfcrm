@@ -606,7 +606,7 @@ function TemplateGenerateButton({ proposalId, currentTemplateId, currentPath }: 
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const gen = useServerFn(generateProposalPdf);
-  const { data: templates = [] } = useQuery({ queryKey: ["templates"], queryFn: listTemplates, enabled: open });
+  const { data: templates = [] } = useQuery<TemplateRow[]>({ queryKey: ["templates"], queryFn: listTemplates, enabled: open });
 
   useEffect(() => {
     if (!open || !currentPath) return;
