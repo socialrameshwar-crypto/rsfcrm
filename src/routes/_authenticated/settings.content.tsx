@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Plus, Save, Trash2, Blocks, LayoutTemplate, Star } from "lucide-react";
+import { Plus, Save, Trash2, Blocks, LayoutTemplate, Star, Eye, EyeOff, X } from "lucide-react";
 import {
   BLOCK_CATEGORIES, TEMPLATE_SCOPES, AI_SECTIONS, fetchBlocks, fetchProposalTemplates,
   type ContentBlock, type ProposalTemplate,
