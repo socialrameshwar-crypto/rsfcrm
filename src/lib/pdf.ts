@@ -32,6 +32,7 @@ export interface ProposalPdfInput {
   template: string;
   quotation_type?: "domestic" | "export";
   terms?: ProposalTermsClause[];
+  blocks?: ProposalBlock[];
 }
 
 // Rameshwar Steel Fab brand palette (matches printed brochure)
