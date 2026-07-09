@@ -442,8 +442,51 @@ function NewProposalWizard() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          {/* Mobile: stacked cards */}
+          <div className="md:hidden space-y-3">
+            {currentMachines.map((m, i) => (
+              <div key={i} className="rounded-lg border p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>#{i + 1}</span>
+                  <span className="font-semibold text-foreground">{formatMoney(m.qty * m.unit_price, currency)}</span>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Machine</label>
+                  <Input value={m.name} onChange={e => updateMachine(i, "name", e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Qty</label>
+                    <Input type="number" value={m.qty} onChange={e => updateMachine(i, "qty", Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Capacity</label>
+                    <Input value={m.capacity} onChange={e => updateMachine(i, "capacity", e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Motor</label>
+                    <Input value={m.motor} onChange={e => updateMachine(i, "motor", e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">MOC</label>
+                    <Input value={m.material} onChange={e => updateMachine(i, "material", e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Unit price</label>
+                  <Input type="number" value={m.unit_price} onChange={e => updateMachine(i, "unit_price", Number(e.target.value))} className="text-right" />
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-2 border-t font-semibold text-sm">
+              <span>Machines total</span>
+              <span>{formatMoney(commercials.machines_total, currency)}</span>
+            </div>
+          </div>
+
+          {/* Tablet/Desktop: table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm min-w-[720px]">
               <thead className="text-left text-xs uppercase text-muted-foreground border-b">
                 <tr>
                   <th className="py-2 pr-2">#</th>
@@ -478,6 +521,7 @@ function NewProposalWizard() {
               </tfoot>
             </table>
           </div>
+
         </Card>
       )}
 
