@@ -191,6 +191,10 @@ function BlockEditor() {
           <Button variant={device === "desktop" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("desktop")}><Monitor className="h-3.5 w-3.5 mr-1" />Desktop</Button>
           <Button variant={device === "mobile" ? "default" : "ghost"} size="sm" className="h-7 px-2" onClick={() => setDevice("mobile")}><Smartphone className="h-3.5 w-3.5 mr-1" />Mobile</Button>
         </div>
+        <div className="mx-2 h-6 w-px bg-border" />
+        <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+          <Sparkles className="h-3.5 w-3.5 mr-1" /> Import template
+        </Button>
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           {saving ? <>Saving…</> : saved ? <><Check className="h-3.5 w-3.5 text-success" /> Saved</> : <>Unsaved</>}
           <Button size="sm" onClick={() => patch.mutate({ blocks, ai })} disabled={saved || saving} className="gradient-primary">
