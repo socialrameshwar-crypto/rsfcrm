@@ -20,6 +20,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Sparkles, Check, Users, Cog, Zap, DollarSign, ChevronLeft, ChevronRight, PlusCircle, AlertCircle } from "lucide-react";
 import { ensureDefaultTemplates, fetchTemplates, inferModeFromCountry, type QuotationType } from "@/lib/terms";
+import { fetchCategories, fetchMachines } from "@/lib/products";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/proposals/new")({
