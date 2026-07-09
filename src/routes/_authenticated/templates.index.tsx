@@ -394,9 +394,28 @@ function ImportDialog({ open, onOpenChange, runImport, onCreated }: {
   const submit = async () => {
     if (!name.trim()) { toast.error("Give the template a name"); return; }
     if (!text.trim() && !file) { toast.error("Paste some text or upload a file"); return; }
-    if (file && file.size > MAX_FILE_BYTES) { toast.error("File must be under 10 MB"); return; }
+    if (file && file.size > 25 * 1024 * 1024) { toast.error("File must be under 25 MB"); return; }
     setBusy(true);
     try {
+      // Pixel-perfect path: PDFs are kept as-is so the output = the original.
+      if (file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name))) {
+        const uploaded = await uploadTemplatePdf(file);
+        const t = await createTemplate({
+          name: name.trim(),
+          category,
+          mode: "pdf_overlay",
+          source_pdf_url: uploaded.storagePath,
+          source_pdf_pages: uploaded.pages,
+          overlays: [],
+          description: `Pixel-perfect template from ${file.name} (${uploaded.pages} pages). Draw fields over the PDF to bind dynamic values.`,
+        });
+        toast.success("PDF imported pixel-perfect — output will match the source exactly.");
+        reset();
+        onCreated(t);
+        return;
+      }
+
+      if (file && file.size > MAX_FILE_BYTES) { toast.error("Non-PDF files must be under 10 MB"); setBusy(false); return; }
       const payload: any = { text: text || undefined };
       if (file) {
         const dataBase64 = await readFileBase64(file);
@@ -447,7 +466,7 @@ function ImportDialog({ open, onOpenChange, runImport, onCreated }: {
               accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,image/png,image/jpeg,image/webp"
               onChange={e => setFile(e.target.files?.[0] ?? null)} />
             {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {(file.size/1024).toFixed(0)} KB</p>}
-            <p className="text-[11px] text-muted-foreground mt-1">AI extracts a block-based layout (text, sections, tables, machines, terms). Complex visual formatting is approximated, not pixel-perfect.</p>
+            <p className="text-[11px] text-muted-foreground mt-1"><b>PDF uploads are kept pixel-perfect</b> — the file becomes the visual layer and output matches the original exactly. DOCX / PPTX / images are converted by AI into editable blocks (approximation, not pixel-perfect).</p>
           </div>
         </div>
         <DialogFooter>
