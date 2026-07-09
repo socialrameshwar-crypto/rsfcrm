@@ -26,7 +26,7 @@ const NAV: NavItem[] = [
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/proposals", label: "Proposals", icon: FileText },
   { to: "/proposals/new", label: "New Proposal", icon: PlusCircle, highlight: true },
-  { to: "/templates", label: "Template Manager", icon: LayoutTemplate },
+  
   { to: "/settings/products", label: "Products & Machines", icon: Package },
   { to: "/settings/rules", label: "Auto-Select & Formulas", icon: Sparkles },
   { to: "/settings/content", label: "Content Library", icon: Blocks },
