@@ -56,6 +56,453 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_companies: {
+        Row: {
+          address: string | null
+          company_name: string
+          contacts: Json
+          country: string | null
+          created_at: string
+          gstin: string | null
+          id: string
+          notes: string | null
+          state: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          company_name: string
+          contacts?: Json
+          country?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          notes?: string | null
+          state?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          contacts?: Json
+          country?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          notes?: string | null
+          state?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_followups: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          lead_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          lead_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          lead_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_followups_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_leads: {
+        Row: {
+          assigned_to: string | null
+          company_id: string | null
+          company_name: string
+          contact_person: string | null
+          country: string
+          created_at: string
+          email: string | null
+          id: string
+          last_followup_at: string | null
+          notes: string | null
+          phone: string | null
+          product_id: string | null
+          source: string
+          stage: Database["public"]["Enums"]["lead_stage"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id?: string | null
+          company_name: string
+          contact_person?: string | null
+          country?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_followup_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          product_id?: string | null
+          source?: string
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string | null
+          company_name?: string
+          contact_person?: string | null
+          country?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_followup_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          product_id?: string | null
+          source?: string
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_product_stats"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "crm_leads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_orders: {
+        Row: {
+          actual_dispatch: string | null
+          created_at: string
+          expected_dispatch: string | null
+          id: string
+          order_date: string
+          order_no: string | null
+          order_value: number
+          production_status: Database["public"]["Enums"]["order_status"]
+          quotation_id: string | null
+          transport_details: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_dispatch?: string | null
+          created_at?: string
+          expected_dispatch?: string | null
+          id?: string
+          order_date?: string
+          order_no?: string | null
+          order_value?: number
+          production_status?: Database["public"]["Enums"]["order_status"]
+          quotation_id?: string | null
+          transport_details?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          actual_dispatch?: string | null
+          created_at?: string
+          expected_dispatch?: string | null
+          id?: string
+          order_date?: string
+          order_no?: string | null
+          order_value?: number
+          production_status?: Database["public"]["Enums"]["order_status"]
+          quotation_id?: string | null
+          transport_details?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_orders_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "crm_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_products: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          domestic_price_inr: number
+          export_price_usd: number
+          gst_pct: number
+          hsn_code: string | null
+          id: string
+          image_url: string | null
+          name: string
+          production_status: Database["public"]["Enums"]["product_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          domestic_price_inr?: number
+          export_price_usd?: number
+          gst_pct?: number
+          hsn_code?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          production_status?: Database["public"]["Enums"]["product_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          domestic_price_inr?: number
+          export_price_usd?: number
+          gst_pct?: number
+          hsn_code?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          production_status?: Database["public"]["Enums"]["product_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_quotation_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          product_id: string | null
+          product_name: string
+          qty: number
+          quotation_id: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name: string
+          qty?: number
+          quotation_id: string
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          product_id?: string | null
+          product_name?: string
+          qty?: number
+          quotation_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_quotation_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_product_stats"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "crm_quotation_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "crm_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_quotations: {
+        Row: {
+          cgst: number
+          company_id: string | null
+          created_at: string
+          currency: string
+          grand_total: number
+          id: string
+          igst: number
+          lead_id: string | null
+          payment_terms: string | null
+          quote_date: string
+          quote_no: string | null
+          sgst: number
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          tax_mode: string
+          updated_at: string
+          user_id: string
+          validity_days: number
+        }
+        Insert: {
+          cgst?: number
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          grand_total?: number
+          id?: string
+          igst?: number
+          lead_id?: string | null
+          payment_terms?: string | null
+          quote_date?: string
+          quote_no?: string | null
+          sgst?: number
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_mode?: string
+          updated_at?: string
+          user_id?: string
+          validity_days?: number
+        }
+        Update: {
+          cgst?: number
+          company_id?: string | null
+          created_at?: string
+          currency?: string
+          grand_total?: number
+          id?: string
+          igst?: number
+          lead_id?: string | null
+          payment_terms?: string | null
+          quote_date?: string
+          quote_no?: string | null
+          sgst?: number
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_mode?: string
+          updated_at?: string
+          user_id?: string
+          validity_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_quotations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "crm_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_quotations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_tours: {
+        Row: {
+          cities: string | null
+          company_ids: string[]
+          created_at: string
+          end_date: string
+          expense: number | null
+          id: string
+          notes: string | null
+          sales_user_id: string | null
+          sales_user_name: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cities?: string | null
+          company_ids?: string[]
+          created_at?: string
+          end_date: string
+          expense?: number | null
+          id?: string
+          notes?: string | null
+          sales_user_id?: string | null
+          sales_user_name?: string | null
+          start_date: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          cities?: string | null
+          company_ids?: string[]
+          created_at?: string
+          end_date?: string
+          expense?: number | null
+          id?: string
+          notes?: string | null
+          sales_user_id?: string | null
+          sales_user_name?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           city: string | null
@@ -560,6 +1007,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       utility_formulas: {
         Row: {
           archived: boolean
@@ -604,13 +1072,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      crm_product_stats: {
+        Row: {
+          product_id: string | null
+          quotation_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      seed_rsf_demo_data: { Args: { _uid: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "sales"
+      lead_stage:
+        | "New"
+        | "Contacted"
+        | "Quotation Sent"
+        | "Negotiation"
+        | "Won"
+        | "Lost"
+      order_status:
+        | "Pending"
+        | "In Production"
+        | "Quality Check"
+        | "Dispatched"
+        | "Delivered"
+      product_status: "In Stock" | "Made to Order"
+      quote_status: "Draft" | "Sent" | "Accepted" | "Rejected" | "Expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -737,6 +1234,25 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "sales"],
+      lead_stage: [
+        "New",
+        "Contacted",
+        "Quotation Sent",
+        "Negotiation",
+        "Won",
+        "Lost",
+      ],
+      order_status: [
+        "Pending",
+        "In Production",
+        "Quality Check",
+        "Dispatched",
+        "Delivered",
+      ],
+      product_status: ["In Stock", "Made to Order"],
+      quote_status: ["Draft", "Sent", "Accepted", "Rejected", "Expired"],
+    },
   },
 } as const
