@@ -280,6 +280,8 @@ function BlockEditor() {
           )}
         </div>
       </div>
+
+      <TemplateImportDialog open={importOpen} onOpenChange={setImportOpen} onApply={applyImport} />
     </div>
   );
 }
