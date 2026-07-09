@@ -68,6 +68,155 @@ export type Database = {
         }
         Relationships: []
       }
+      machines: {
+        Row: {
+          applications: string[]
+          archived: boolean
+          base_price: number
+          capacity: string | null
+          category_id: string | null
+          code: string | null
+          commissioning_pct: number
+          created_at: string
+          currency: string
+          customer_price: number
+          dealer_price: number
+          description: string | null
+          dimensions: string | null
+          discount_pct: number
+          export_price: number
+          features: string[]
+          freight_pct: number
+          id: string
+          image_url: string | null
+          install_pct: number
+          material: string | null
+          motor: string | null
+          name: string
+          optional_accessories: Json
+          packing_pct: number
+          power_kw: number | null
+          sort_order: number
+          std_accessories: string[]
+          tax_pct: number
+          updated_at: string
+          user_id: string
+          warranty: string | null
+          weight: string | null
+        }
+        Insert: {
+          applications?: string[]
+          archived?: boolean
+          base_price?: number
+          capacity?: string | null
+          category_id?: string | null
+          code?: string | null
+          commissioning_pct?: number
+          created_at?: string
+          currency?: string
+          customer_price?: number
+          dealer_price?: number
+          description?: string | null
+          dimensions?: string | null
+          discount_pct?: number
+          export_price?: number
+          features?: string[]
+          freight_pct?: number
+          id?: string
+          image_url?: string | null
+          install_pct?: number
+          material?: string | null
+          motor?: string | null
+          name: string
+          optional_accessories?: Json
+          packing_pct?: number
+          power_kw?: number | null
+          sort_order?: number
+          std_accessories?: string[]
+          tax_pct?: number
+          updated_at?: string
+          user_id: string
+          warranty?: string | null
+          weight?: string | null
+        }
+        Update: {
+          applications?: string[]
+          archived?: boolean
+          base_price?: number
+          capacity?: string | null
+          category_id?: string | null
+          code?: string | null
+          commissioning_pct?: number
+          created_at?: string
+          currency?: string
+          customer_price?: number
+          dealer_price?: number
+          description?: string | null
+          dimensions?: string | null
+          discount_pct?: number
+          export_price?: number
+          features?: string[]
+          freight_pct?: number
+          id?: string
+          image_url?: string | null
+          install_pct?: number
+          material?: string | null
+          motor?: string | null
+          name?: string
+          optional_accessories?: Json
+          packing_pct?: number
+          power_kw?: number | null
+          sort_order?: number
+          std_accessories?: string[]
+          tax_pct?: number
+          updated_at?: string
+          user_id?: string
+          warranty?: string | null
+          weight?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machines_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          hidden: boolean
+          id: string
+          name: string
+          slug: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          name: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          name?: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       proposals: {
         Row: {
           ai_content: Json

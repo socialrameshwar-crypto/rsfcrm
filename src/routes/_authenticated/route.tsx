@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell, ScrollText,
+  LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell, ScrollText, Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,10 @@ const NAV: NavItem[] = [
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/proposals", label: "Proposals", icon: FileText },
   { to: "/proposals/new", label: "New Proposal", icon: PlusCircle, highlight: true },
+  { to: "/settings/products", label: "Products & Machines", icon: Package },
   { to: "/settings/terms", label: "Terms Library", icon: ScrollText },
 ];
+
 
 function AppShell() {
   const { user } = Route.useRouteContext();
