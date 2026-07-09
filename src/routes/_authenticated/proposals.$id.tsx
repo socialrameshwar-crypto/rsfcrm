@@ -97,15 +97,6 @@ function ProposalDetail() {
 
   const { data: pTemplates = [] } = useQuery({ queryKey: ["proposal-templates"], queryFn: fetchProposalTemplates });
 
-  // Linked pixel-perfect template (if any)
-  const linkedTemplateId = (data as any)?.template_id as string | null | undefined;
-  const { data: linkedTemplate } = useQuery({
-    queryKey: ["template", linkedTemplateId],
-    enabled: !!linkedTemplateId,
-    queryFn: () => getTemplate(linkedTemplateId as string),
-  });
-  const isPdfOverlay = linkedTemplate?.mode === "pdf_overlay" && !!linkedTemplate.source_pdf_url;
-
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   const p = data;
@@ -115,7 +106,7 @@ function ProposalDetail() {
   const ai = (p.ai_content as unknown as AiProposalContent) ?? ({} as AiProposalContent);
   const cust = (p as any).customers ?? {};
   const productLabel = PRODUCT_TYPES.find(x => x.value === p.product_type)?.label ?? p.product_type;
-  const overlayValues = ((p as any).overlay_values as Record<string, string>) ?? {};
+
 
   const pdfInput = {
     proposal_number: p.proposal_number,
