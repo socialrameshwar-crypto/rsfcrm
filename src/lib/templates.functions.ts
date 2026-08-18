@@ -376,10 +376,12 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
 
         // Prepare rows
         const rows = items_to_draw.map((it, i) => {
+          const machine = String(it.product_name || it.name || it.machine || "");
+          const desc = [it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || "");
           return {
             sr_no: String(i + 1),
-            machine: sanitizeWinAnsi(String(it.product_name || it.name || it.machine || "")),
-            description: sanitizeWinAnsi([it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || "")),
+            machine: machine,
+            description: desc,
             qty: String(it.qty || it.quantity || 1),
             unit_price: fmtMoney(Number(it.unit_price || 0), currency),
             amount: fmtMoney(Number(it.line_total || (Number(it.qty || 1) * Number(it.unit_price || 0)) || 0), currency),
