@@ -6,6 +6,7 @@ export type FieldToken =
   | "product_name" | "capacity"
   | "subtotal" | "tax" | "grand_total" | "currency"
   | "payment_terms" | "delivery_time" | "signature_name"
+  | "signature_phone" | "signature_email" | "subject" | "intro_note"
   | "custom";
 
 export interface DetectedField {

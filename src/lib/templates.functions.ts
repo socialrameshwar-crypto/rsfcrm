@@ -229,7 +229,7 @@ function tokenValue(token: string, ctx: {
     case "product_name": return p.title ?? p.product_type ?? "";
     case "capacity": return p.capacity ?? "";
     case "subtotal": return fmtMoney(commercials.subtotal ?? p.subtotal ?? 0, currency);
-    case "tax": return fmtMoney(commercials.tax ?? p.igst ?? (p.cgst + p.sgst) ?? 0, currency);
+    case "tax": return fmtMoney(commercials.tax ?? p.igst ?? ((Number(p.cgst) || 0) + (Number(p.sgst) || 0)) ?? 0, currency);
     case "grand_total": return fmtMoney(commercials.grand_total ?? p.total_value ?? p.grand_total ?? 0, currency);
     case "currency": return currency;
     case "payment_terms": return p.payment_terms ?? "50% advance, balance before dispatch";
@@ -254,14 +254,17 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
       .from("proposal_templates").select("*").eq("id", data.templateId).single();
     if (te || !tmpl) throw new Error("Template not found");
 
-    // Load proposal + customer
     // We check both tables because the generator might be called for a CRM Quotation or a Proposal Suite Proposal
-    let { data: prop, error: pe } = await supabase
-      .from("proposals").select("*, customers(*)").eq("id", data.proposalId).single();
-    
+    let prop: any = null;
     let items_to_draw: any[] = [];
     
-    if (pe || !prop) {
+    const { data: p1 } = await supabase
+      .from("proposals").select("*, customers(*)").eq("id", data.proposalId).single();
+    
+    if (p1) {
+      prop = p1;
+      items_to_draw = Array.isArray((prop as any).machines) ? (prop as any).machines : [];
+    } else {
       // Try CRM Quotations
       const { data: q, error: qe } = await supabase
         .from("crm_quotations").select("*, crm_companies(*)").eq("id", data.proposalId).single();
@@ -272,16 +275,15 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
       
       prop = q;
       // Map CRM company to match proposal customer structure
-      (prop as any).customers = q.crm_companies ? {
-        customer_name: q.crm_companies.company_name,
-        company_name: q.crm_companies.company_name,
-        city: q.crm_companies.state,
-        country: q.crm_companies.country,
-        contact_person: Array.isArray(q.crm_companies.contacts) ? q.crm_companies.contacts[0]?.name : ""
+      const cc = q.crm_companies as any;
+      (prop as any).customers = cc ? {
+        customer_name: cc.company_name,
+        company_name: cc.company_name,
+        city: cc.state,
+        country: cc.country,
+        contact_person: Array.isArray(cc.contacts) && cc.contacts.length ? (cc.contacts[0] as any).name : ""
       } : {};
       items_to_draw = its || [];
-    } else {
-      items_to_draw = Array.isArray((prop as any).machines) ? (prop as any).machines : [];
     }
 
     // Load source PDF from storage (owner path)
