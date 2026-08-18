@@ -354,7 +354,6 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
     // Line items
     const li = analysis.line_items;
     if (li && Array.isArray(li.columns) && li.columns.length) {
-      const machines: any[] = Array.isArray((prop as any).machines) ? (prop as any).machines : [];
       const currency = (prop as any).currency ?? "INR";
       const pageIdx = Math.max(0, li.page - 1);
       const startPage = pages[pageIdx];
@@ -376,11 +375,11 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
         const rows = items_to_draw.map((it, i) => {
           return {
             sr_no: String(i + 1),
-            machine: String(it.product_name || it.name || it.machine || ""),
-            description: [it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || ""),
+            machine: sanitizeWinAnsi(String(it.product_name || it.name || it.machine || "")),
+            description: sanitizeWinAnsi([it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || "")),
             qty: String(it.qty || it.quantity || 1),
             unit_price: fmtMoney(Number(it.unit_price || 0), currency),
-            amount: fmtMoney(Number(it.line_total || (it.qty * it.unit_price) || 0), currency),
+            amount: fmtMoney(Number(it.line_total || (Number(it.qty || 1) * Number(it.unit_price || 0)) || 0), currency),
           } as Record<string, string>;
         });
 
