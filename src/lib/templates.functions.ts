@@ -207,7 +207,10 @@ function sanitizeWinAnsi(s: string): string {
     .replace(/[\u2013\u2014]/g, "-")
     .replace(/\u2026/g, "...")
     .replace(/\u00A0/g, " ")
-    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+    .replace(/[^\x00-\xFF]/g, (c) => {
+      // If char is outside Latin-1, try to decompose or strip
+      return c.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\xFF]/g, "");
+    });
 }
 
 
@@ -386,8 +389,9 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
         const drawRowOn = (page: any, region: typeof li, r: Record<string, string>, rowY: number) => {
           const ph = page.getHeight();
           for (const col of region.columns) {
-            const text = r[col.key] ?? "";
-            if (!text) continue;
+            const rawText = r[col.key] ?? "";
+            if (!rawText) continue;
+            const text = sanitizeWinAnsi(rawText);
             const size = col.fontSize ?? 9;
             const font = helv;
             const tw = font.widthOfTextAtSize(text, size);
