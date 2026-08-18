@@ -440,10 +440,16 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
     });
     if (upload.error) throw new Error("Upload failed: " + upload.error.message);
 
-    // Save reference on proposal
-    await supabase.from("proposals")
-      .update({ generated_pdf_path: outPath, template_id: data.templateId } as any)
-      .eq("id", data.proposalId);
+    // Save reference on document (check which table it belongs to)
+    if (p1) {
+      await supabase.from("proposals")
+        .update({ generated_pdf_path: outPath, template_id: data.templateId } as any)
+        .eq("id", data.proposalId);
+    } else {
+      await supabase.from("crm_quotations")
+        .update({ generated_pdf_path: outPath, template_id: data.templateId } as any)
+        .eq("id", data.proposalId);
+    }
 
     const signed = await supabase.storage.from("proposal-pdfs").createSignedUrl(outPath, 3600);
     return { path: outPath, url: signed.data?.signedUrl ?? null };
