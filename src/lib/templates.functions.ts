@@ -390,18 +390,45 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
 
         const drawRowOn = (page: any, region: typeof li, r: Record<string, string>, rowY: number) => {
           const ph = page.getHeight();
+          const font = helv;
+          const color = rgb(0.06, 0.06, 0.06);
+
           for (const col of region.columns) {
             const rawText = r[col.key] ?? "";
             if (!rawText) continue;
             const text = sanitizeWinAnsi(rawText);
             const size = col.fontSize ?? 9;
-            const font = helv;
-            const tw = font.widthOfTextAtSize(text, size);
-            let tx = col.x + 2;
-            if (col.align === "center") tx = col.x + (col.width - tw) / 2;
-            else if (col.align === "right") tx = col.x + col.width - tw - 2;
-            const ty = ph - rowY - rowH + Math.max(0, (rowH - font.heightAtSize(size, { descender: false })) / 2);
-            page.drawText(text, { x: tx, y: ty, size, font, color: rgb(0.06, 0.06, 0.06) });
+            
+            // Handle multi-line description if the column is wide enough and text is long
+            if (col.key === "description" && text.length > 40) {
+              const maxWidth = col.width - 4;
+              const words = text.split(" ");
+              let line = "";
+              let currentY = rowY;
+              
+              for (const word of words) {
+                const testLine = line ? `${line} ${word}` : word;
+                if (font.widthOfTextAtSize(testLine, size) > maxWidth && line) {
+                  const ty = ph - currentY - font.heightAtSize(size) - 2;
+                  page.drawText(line, { x: col.x + 2, y: ty, size, font, color });
+                  line = word;
+                  currentY += size + 2;
+                } else {
+                  line = testLine;
+                }
+              }
+              if (line) {
+                const ty = ph - currentY - font.heightAtSize(size) - 2;
+                page.drawText(line, { x: col.x + 2, y: ty, size, font, color });
+              }
+            } else {
+              const tw = font.widthOfTextAtSize(text, size);
+              let tx = col.x + 2;
+              if (col.align === "center") tx = col.x + (col.width - tw) / 2;
+              else if (col.align === "right") tx = col.x + col.width - tw - 2;
+              const ty = ph - rowY - rowH + Math.max(0, (rowH - font.heightAtSize(size, { descender: false })) / 2);
+              page.drawText(text, { x: tx, y: ty, size, font, color });
+            }
           }
         };
 
