@@ -7,7 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtMoney, QUOTE_STATUSES } from "@/lib/crm";
 import { generateQuotationPDF } from "@/lib/crm-pdf";
-import { ArrowLeft, Download, ShoppingCart, Trash2 } from "lucide-react";
+import { listTemplates } from "@/lib/templates";
+import { generateProposalPdf } from "@/lib/templates.functions";
+import { ArrowLeft, Download, ShoppingCart, Trash2, FileText, Sparkles } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/crm/quotations/$id")({
@@ -18,6 +21,7 @@ function QuoteDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const generate = useServerFn(generateProposalPdf);
 
   const q = useQuery({
     queryKey: ["crm_quote", id],
@@ -27,6 +31,33 @@ function QuoteDetail() {
     queryKey: ["crm_quote_items", id],
     queryFn: async () => (await (supabase as any).from("crm_quotation_items").select("*").eq("quotation_id", id)).data ?? [],
   });
+  const templates = useQuery({
+    queryKey: ["templates"],
+    queryFn: listTemplates,
+  });
+
+  const [selTemplateId, setSelTemplateId] = useState<string>("");
+
+  useEffect(() => {
+    if (templates.data?.length && !selTemplateId) {
+      const def = templates.data.find(t => t.is_default) || templates.data[0];
+      setSelTemplateId(def.id);
+    }
+  }, [templates.data]);
+
+  const runTemplateGen = async () => {
+    if (!selTemplateId) return toast.error("Select a template first");
+    try {
+      toast.loading("Generating pixel-perfect PDF...");
+      await generate({ data: { proposalId: id, templateId: selTemplateId } });
+      toast.dismiss();
+      toast.success("PDF Generated using Template");
+      q.refetch();
+    } catch (e: any) {
+      toast.dismiss();
+      toast.error(e.message);
+    }
+  };
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => { const { error } = await (supabase as any).from("crm_quotations").update({ status }).eq("id", id); if (error) throw error; },
@@ -66,8 +97,21 @@ function QuoteDetail() {
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>{QUOTE_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
+
+          <div className="flex items-center gap-2 border rounded-md p-1 bg-muted/30">
+            <Select value={selTemplateId} onValueChange={setSelTemplateId}>
+              <SelectTrigger className="w-48 h-8 text-xs border-none bg-transparent"><SelectValue placeholder="Select Template" /></SelectTrigger>
+              <SelectContent>
+                {templates.data?.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" className="h-8 gap-1 gradient-primary" onClick={runTemplateGen} disabled={!selTemplateId}>
+              <Sparkles className="h-3.5 w-3.5" /> Template Gen
+            </Button>
+          </div>
+
           <Button variant="outline" size="sm" onClick={() => generateQuotationPDF(Q, items.data ?? [], Q.crm_companies)}>
-            <Download className="h-4 w-4 mr-1" />PDF
+            <Download className="h-4 w-4 mr-1" />Standard PDF
           </Button>
           {Q.status === "Accepted" && (
             <Button size="sm" onClick={() => createOrder.mutate()}><ShoppingCart className="h-4 w-4 mr-1" />Convert to Order</Button>

@@ -224,17 +224,21 @@ function tokenValue(token: string, ctx: {
     case "customer_address": return [c.city, c.country].filter(Boolean).join(", ");
     case "contact_person": return c.contact_person ?? "";
     case "proposal_number":
-    case "quotation_number": return p.proposal_number ?? "";
-    case "date": return new Date(p.created_at ?? Date.now()).toLocaleDateString();
+    case "quotation_number": return p.proposal_number ?? p.quote_no ?? "";
+    case "date": return new Date(p.created_at ?? p.quote_date ?? Date.now()).toLocaleDateString();
     case "product_name": return p.title ?? p.product_type ?? "";
     case "capacity": return p.capacity ?? "";
-    case "subtotal": return fmtMoney(commercials.subtotal ?? 0, currency);
-    case "tax": return fmtMoney(commercials.tax ?? 0, currency);
-    case "grand_total": return fmtMoney(commercials.grand_total ?? p.total_value ?? 0, currency);
+    case "subtotal": return fmtMoney(commercials.subtotal ?? p.subtotal ?? 0, currency);
+    case "tax": return fmtMoney(commercials.tax ?? p.igst ?? (p.cgst + p.sgst) ?? 0, currency);
+    case "grand_total": return fmtMoney(commercials.grand_total ?? p.total_value ?? p.grand_total ?? 0, currency);
     case "currency": return currency;
     case "payment_terms": return p.payment_terms ?? "50% advance, balance before dispatch";
     case "delivery_time": return p.delivery_time ?? "8-10 weeks from PO";
-    case "signature_name": return p.sales_engineer ?? "";
+    case "signature_name": return p.sales_engineer ?? p.sales_engineer_name ?? "";
+    case "signature_phone": return p.sales_engineer_phone ?? "";
+    case "signature_email": return p.sales_engineer_email ?? "";
+    case "subject": return p.subject ?? "";
+    case "intro_note": return p.intro_note ?? "";
     default: return "";
   }
 }
@@ -251,9 +255,34 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
     if (te || !tmpl) throw new Error("Template not found");
 
     // Load proposal + customer
-    const { data: prop, error: pe } = await supabase
+    // We check both tables because the generator might be called for a CRM Quotation or a Proposal Suite Proposal
+    let { data: prop, error: pe } = await supabase
       .from("proposals").select("*, customers(*)").eq("id", data.proposalId).single();
-    if (pe || !prop) throw new Error("Proposal not found");
+    
+    let items_to_draw: any[] = [];
+    
+    if (pe || !prop) {
+      // Try CRM Quotations
+      const { data: q, error: qe } = await supabase
+        .from("crm_quotations").select("*, crm_companies(*)").eq("id", data.proposalId).single();
+      if (qe || !q) throw new Error("Document not found");
+      
+      const { data: its } = await supabase
+        .from("crm_quotation_items").select("*").eq("quotation_id", data.proposalId);
+      
+      prop = q;
+      // Map CRM company to match proposal customer structure
+      (prop as any).customers = q.crm_companies ? {
+        customer_name: q.crm_companies.company_name,
+        company_name: q.crm_companies.company_name,
+        city: q.crm_companies.state,
+        country: q.crm_companies.country,
+        contact_person: Array.isArray(q.crm_companies.contacts) ? q.crm_companies.contacts[0]?.name : ""
+      } : {};
+      items_to_draw = its || [];
+    } else {
+      items_to_draw = Array.isArray((prop as any).machines) ? (prop as any).machines : [];
+    }
 
     // Load source PDF from storage (owner path)
     const srcPath = `${userId}/${tmpl.id}/source.pdf`;
@@ -339,16 +368,14 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
         const rowsPerPage = Math.max(1, Math.floor(li.height / rowH));
 
         // Prepare rows
-        const rows = machines.map((m, i) => {
-          const qty = Number(m.quantity ?? 1);
-          const unit = Number(m.unit_price ?? 0);
+        const rows = items_to_draw.map((it, i) => {
           return {
             sr_no: String(i + 1),
-            machine: String(m.name ?? m.machine ?? ""),
-            description: String(m.description ?? m.specifications ?? ""),
-            qty: String(qty),
-            unit_price: fmtMoney(unit, currency),
-            amount: fmtMoney(qty * unit, currency),
+            machine: String(it.product_name || it.name || it.machine || ""),
+            description: [it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || ""),
+            qty: String(it.qty || it.quantity || 1),
+            unit_price: fmtMoney(Number(it.unit_price || 0), currency),
+            amount: fmtMoney(Number(it.line_total || (it.qty * it.unit_price) || 0), currency),
           } as Record<string, string>;
         });
 
