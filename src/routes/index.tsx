@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import logo from "@/assets/rsf-logo.png.asset.json";
+import logo from "@/assets/shivholic-logo.png.asset.json";
 import {
   Sparkles, FileText, LayoutTemplate, Upload, Eye, DollarSign, Database, Package,
   Calculator, ScrollText, Users, History, Download, UsersRound, Cloud, GitBranch,
@@ -120,7 +120,7 @@ function Nav() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo.url} alt="RSF" className="h-8 w-8 rounded-md object-contain" />
-          <span className="text-sm font-bold tracking-tight">Rameshwar Steel Fab</span>
+          <span className="text-sm font-bold tracking-tight">Shivholic Media CRM Suite</span>
         </Link>
         <nav className="hidden items-center gap-7 lg:flex">
           {NAV.map((n) => (

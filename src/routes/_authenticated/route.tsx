@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/shivholic-logo.png.asset.json";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Users, FileText, PlusCircle, LogOut, Factory, Menu, Search, Bell, ScrollText, Package, Sparkles, Blocks, LayoutTemplate, Home,
@@ -73,12 +74,10 @@ function AppShell() {
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex items-center gap-3 px-5 h-16 border-b border-sidebar-border">
-          <div className="h-9 w-9 rounded-lg bg-primary grid place-items-center font-bold text-primary-foreground">
-            RSF
-          </div>
+          <img src={logo.url} alt="Shivholic" className="h-9 w-9 rounded-lg object-contain" />
           <div>
-            <div className="text-sm font-bold leading-tight">Rameshwar Steel Fab</div>
-            <div className="text-[10px] opacity-70 uppercase tracking-wider">RSF CRM</div>
+            <div className="text-sm font-bold leading-tight">Shivholic Media</div>
+            <div className="text-[10px] opacity-70 uppercase tracking-wider">CRM Suite</div>
           </div>
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
