@@ -173,10 +173,7 @@ function Hero() {
             in Minutes with AI
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
-            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            I have approved the plan
+            Create pixel-perfect quotations, proposals, and technical documents using AI-powered templates. Save time, reduce manual work, and impress your customers with enterprise-quality documents.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link to="/auth">
