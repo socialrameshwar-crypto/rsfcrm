@@ -365,23 +365,41 @@ function WhyChoose() {
 }
 
 function Screenshots() {
-  const shots = ["Dashboard", "Proposal Generator", "Quotation Generator", "Template Manager", "PDF Preview", "Product Manager", "Pricing Manager", "Customer CRM"];
+  const shots = [
+    { title: "Dashboard", color: "bg-blue-500/10", tag: "Analytics", content: "Overview of your sales pipeline and active proposals." },
+    { title: "Proposal Generator", color: "bg-accent/10", tag: "AI Engine", content: "Smart drafting of technical specifications and scope." },
+    { title: "Quotation Generator", color: "bg-emerald-500/10", tag: "Commercials", content: "Automated calculations for tax, freight, and margins." },
+    { title: "Template Manager", color: "bg-purple-500/10", tag: "Library", content: "Master designs that ensure pixel-perfect brand consistency." },
+    { title: "PDF Preview", color: "bg-orange-500/10", tag: "Real-time", content: "WYSIWYG enterprise-grade PDF engine with live output." },
+    { title: "Product Manager", color: "bg-pink-500/10", tag: "Inventory", content: "Central database for machine specs and pricing rules." },
+    { title: "Pricing Manager", color: "bg-indigo-500/10", tag: "CPQ", content: "Dynamic formula-based pricing for complex assemblies." },
+    { title: "Customer CRM", color: "bg-teal-500/10", tag: "Sales", content: "Track customer history, leads, and follow-up activities." },
+  ];
   return (
     <Section id="demo" eyebrow="Product Tour" title="A closer look at the platform" subtitle="Every module designed with enterprise polish and startup speed.">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {shots.map((s, i) => (
-          <div key={s} className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-gradient-to-br from-muted to-background p-4">
-            <div className="absolute inset-0 opacity-30 transition-opacity group-hover:opacity-50" style={{ background: "linear-gradient(135deg, oklch(0.58 0.18 258 / 0.15), transparent 60%)" }} />
-            <div className="flex h-full flex-col justify-between">
-              <div className="h-2 w-1/3 rounded bg-primary/60" />
-              <div className="space-y-1">
-                <div className="h-1.5 w-full rounded bg-foreground/10" />
-                <div className="h-1.5 w-3/4 rounded bg-foreground/10" />
-                <div className="h-1.5 w-1/2 rounded bg-foreground/10" />
+          <div key={s.title} className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-elegant">
+            <div className={`aspect-[16/10] w-full p-4 ${s.color}`}>
+              <div className="flex h-full flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <div className="h-4 w-12 rounded bg-foreground/10" />
+                  <Badge variant="outline" className="h-5 px-1.5 text-[9px] font-medium uppercase tracking-wider opacity-80">{s.tag}</Badge>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-2 w-full rounded bg-foreground/10" />
+                  <div className="h-2 w-4/5 rounded bg-foreground/10" />
+                  <div className="h-2 w-3/5 rounded bg-foreground/10" />
+                </div>
               </div>
-              <div className="text-[11px] font-semibold text-foreground">{s}</div>
             </div>
-            <div className="absolute right-3 top-3 text-[10px] font-mono text-muted-foreground">0{i + 1}</div>
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold">{s.title}</h3>
+                <span className="text-[10px] font-mono text-muted-foreground opacity-50">0{i + 1}</span>
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{s.content}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -495,7 +513,7 @@ function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2">
               <img src={logo.url} alt="RSF" className="h-9 w-9 rounded-md object-contain" />
-              <span className="text-sm font-bold">Rameshwar Steel Fab</span>
+              <span className="text-sm font-bold">Shivholic Media CRM Suite</span>
             </div>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               AI-powered proposal & quotation platform for industrial manufacturers and EPC teams worldwide.
@@ -520,7 +538,7 @@ function Footer() {
           ))}
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
-          <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} Rameshwar Steel Fab. All rights reserved.</div>
+          <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} Shivholic Media. All rights reserved.</div>
           <div className="text-xs text-muted-foreground">Made with care for manufacturing teams worldwide.</div>
         </div>
       </div>
