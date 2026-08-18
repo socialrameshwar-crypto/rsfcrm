@@ -229,7 +229,10 @@ function tokenValue(token: string, ctx: {
     case "product_name": return p.title ?? p.product_type ?? "";
     case "capacity": return p.capacity ?? "";
     case "subtotal": return fmtMoney(commercials.subtotal ?? p.subtotal ?? 0, currency);
-    case "tax": return fmtMoney(commercials.tax ?? p.igst ?? ((Number(p.cgst) || 0) + (Number(p.sgst) || 0)) ?? 0, currency);
+    case "tax": {
+      const taxVal = commercials.tax ?? p.igst ?? ((Number(p.cgst) || 0) + (Number(p.sgst) || 0));
+      return fmtMoney(Number(taxVal) || 0, currency);
+    }
     case "grand_total": return fmtMoney(commercials.grand_total ?? p.total_value ?? p.grand_total ?? 0, currency);
     case "currency": return currency;
     case "payment_terms": return p.payment_terms ?? "50% advance, balance before dispatch";
