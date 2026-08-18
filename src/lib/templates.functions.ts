@@ -197,16 +197,16 @@ function fmtMoney(n: number, currency: string): string {
 
 // Replace characters that WinAnsi (pdf-lib StandardFonts) cannot encode.
 function sanitizeWinAnsi(s: string): string {
-  if (!s) return "";
-  return s
+  if (s === null || s === undefined) return "";
+  const str = String(s);
+  return str
     .replace(/\u20B9/g, "Rs.")   // ₹
-    .replace(/\u20AC/g, "EUR ")  // €  (actually in WinAnsi, but safe)
+    .replace(/\u20AC/g, "EUR ")  // €
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2013\u2014]/g, "-")
     .replace(/\u2026/g, "...")
     .replace(/\u00A0/g, " ")
-    // Drop any remaining non-WinAnsi (outside basic latin + latin-1 supplement) chars
     .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
 }
 
@@ -282,8 +282,8 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
       (prop as any).customers = cc ? {
         customer_name: cc.company_name,
         company_name: cc.company_name,
-        city: cc.state,
-        country: cc.country,
+        city: cc.city || cc.state || "",
+        country: cc.country || "",
         contact_person: Array.isArray(cc.contacts) && cc.contacts.length ? (cc.contacts[0] as any).name : ""
       } : {};
       items_to_draw = its || [];
@@ -354,7 +354,6 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
     // Line items
     const li = analysis.line_items;
     if (li && Array.isArray(li.columns) && li.columns.length) {
-      const machines: any[] = Array.isArray((prop as any).machines) ? (prop as any).machines : [];
       const currency = (prop as any).currency ?? "INR";
       const pageIdx = Math.max(0, li.page - 1);
       const startPage = pages[pageIdx];
@@ -376,18 +375,18 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
         const rows = items_to_draw.map((it, i) => {
           return {
             sr_no: String(i + 1),
-            machine: String(it.product_name || it.name || it.machine || ""),
-            description: [it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || ""),
+            machine: sanitizeWinAnsi(String(it.product_name || it.name || it.machine || "")),
+            description: sanitizeWinAnsi([it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || "")),
             qty: String(it.qty || it.quantity || 1),
             unit_price: fmtMoney(Number(it.unit_price || 0), currency),
-            amount: fmtMoney(Number(it.line_total || (it.qty * it.unit_price) || 0), currency),
+            amount: fmtMoney(Number(it.line_total || (Number(it.qty || 1) * Number(it.unit_price || 0)) || 0), currency),
           } as Record<string, string>;
         });
 
         const drawRowOn = (page: any, region: typeof li, r: Record<string, string>, rowY: number) => {
           const ph = page.getHeight();
           for (const col of region.columns) {
-            const text = sanitizeWinAnsi(r[col.key] ?? "");
+            const text = r[col.key] ?? "";
             if (!text) continue;
             const size = col.fontSize ?? 9;
             const font = helv;
@@ -441,10 +440,16 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
     });
     if (upload.error) throw new Error("Upload failed: " + upload.error.message);
 
-    // Save reference on proposal
-    await supabase.from("proposals")
-      .update({ generated_pdf_path: outPath, template_id: data.templateId } as any)
-      .eq("id", data.proposalId);
+    // Save reference on document (check which table it belongs to)
+    if (p1) {
+      await supabase.from("proposals")
+        .update({ generated_pdf_path: outPath, template_id: data.templateId } as any)
+        .eq("id", data.proposalId);
+    } else {
+      await supabase.from("crm_quotations")
+        .update({ generated_pdf_path: outPath, template_id: data.templateId } as any)
+        .eq("id", data.proposalId);
+    }
 
     const signed = await supabase.storage.from("proposal-pdfs").createSignedUrl(outPath, 3600);
     return { path: outPath, url: signed.data?.signedUrl ?? null };
