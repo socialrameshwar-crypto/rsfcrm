@@ -282,8 +282,8 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
       (prop as any).customers = cc ? {
         customer_name: cc.company_name,
         company_name: cc.company_name,
-        city: cc.state,
-        country: cc.country,
+        city: cc.city || cc.state || "",
+        country: cc.country || "",
         contact_person: Array.isArray(cc.contacts) && cc.contacts.length ? (cc.contacts[0] as any).name : ""
       } : {};
       items_to_draw = its || [];
