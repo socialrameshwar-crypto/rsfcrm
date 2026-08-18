@@ -207,7 +207,10 @@ function sanitizeWinAnsi(s: string): string {
     .replace(/[\u2013\u2014]/g, "-")
     .replace(/\u2026/g, "...")
     .replace(/\u00A0/g, " ")
-    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+    .replace(/[^\x00-\xFF]/g, (c) => {
+      // If char is outside Latin-1, try to decompose or strip
+      return c.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x00-\xFF]/g, "");
+    });
 }
 
 
@@ -373,10 +376,12 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
 
         // Prepare rows
         const rows = items_to_draw.map((it, i) => {
+          const machine = String(it.product_name || it.name || it.machine || "");
+          const desc = [it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || "");
           return {
             sr_no: String(i + 1),
-            machine: sanitizeWinAnsi(String(it.product_name || it.name || it.machine || "")),
-            description: sanitizeWinAnsi([it.capacity, it.motor, it.moc].filter(Boolean).join(" | ") || String(it.description || it.specifications || "")),
+            machine: machine,
+            description: desc,
             qty: String(it.qty || it.quantity || 1),
             unit_price: fmtMoney(Number(it.unit_price || 0), currency),
             amount: fmtMoney(Number(it.line_total || (Number(it.qty || 1) * Number(it.unit_price || 0)) || 0), currency),
@@ -385,17 +390,45 @@ export const generateProposalPdf = createServerFn({ method: "POST" })
 
         const drawRowOn = (page: any, region: typeof li, r: Record<string, string>, rowY: number) => {
           const ph = page.getHeight();
+          const font = helv;
+          const color = rgb(0.06, 0.06, 0.06);
+
           for (const col of region.columns) {
-            const text = r[col.key] ?? "";
-            if (!text) continue;
+            const rawText = r[col.key] ?? "";
+            if (!rawText) continue;
+            const text = sanitizeWinAnsi(rawText);
             const size = col.fontSize ?? 9;
-            const font = helv;
-            const tw = font.widthOfTextAtSize(text, size);
-            let tx = col.x + 2;
-            if (col.align === "center") tx = col.x + (col.width - tw) / 2;
-            else if (col.align === "right") tx = col.x + col.width - tw - 2;
-            const ty = ph - rowY - rowH + Math.max(0, (rowH - font.heightAtSize(size, { descender: false })) / 2);
-            page.drawText(text, { x: tx, y: ty, size, font, color: rgb(0.06, 0.06, 0.06) });
+            
+            // Handle multi-line description if the column is wide enough and text is long
+            if (col.key === "description" && text.length > 40) {
+              const maxWidth = col.width - 4;
+              const words = text.split(" ");
+              let line = "";
+              let currentY = rowY;
+              
+              for (const word of words) {
+                const testLine = line ? `${line} ${word}` : word;
+                if (font.widthOfTextAtSize(testLine, size) > maxWidth && line) {
+                  const ty = ph - currentY - font.heightAtSize(size) - 2;
+                  page.drawText(line, { x: col.x + 2, y: ty, size, font, color });
+                  line = word;
+                  currentY += size + 2;
+                } else {
+                  line = testLine;
+                }
+              }
+              if (line) {
+                const ty = ph - currentY - font.heightAtSize(size) - 2;
+                page.drawText(line, { x: col.x + 2, y: ty, size, font, color });
+              }
+            } else {
+              const tw = font.widthOfTextAtSize(text, size);
+              let tx = col.x + 2;
+              if (col.align === "center") tx = col.x + (col.width - tw) / 2;
+              else if (col.align === "right") tx = col.x + col.width - tw - 2;
+              const ty = ph - rowY - rowH + Math.max(0, (rowH - font.heightAtSize(size, { descender: false })) / 2);
+              page.drawText(text, { x: tx, y: ty, size, font, color });
+            }
           }
         };
 
